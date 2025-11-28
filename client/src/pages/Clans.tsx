@@ -25,6 +25,10 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@/components/ui/radio-group";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -41,12 +45,17 @@ import {
   Search,
   ChevronRight,
   Star,
+  Lightbulb,
+  Hammer,
+  Sparkles,
 } from "lucide-react";
 import type { Clan, User } from "@shared/schema";
 
 const createClanSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
   description: z.string().min(10, "Description must be at least 10 characters"),
+  type: z.enum(["interest", "project"]),
+  projectGoal: z.string().optional(),
 });
 
 type CreateClanForm = z.infer<typeof createClanSchema>;
@@ -77,6 +86,7 @@ function ClanCard({ clan, isMember }: { clan: Clan; isMember: boolean }) {
   });
 
   const xpProgress = ((clan.xp || 0) % 5000) / 50;
+  const isProjectClan = clan.type === "project";
 
   return (
     <Card className="hover-elevate overflow-hidden">
@@ -92,11 +102,20 @@ function ClanCard({ clan, isMember }: { clan: Clan; isMember: boolean }) {
       <CardContent className="p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Shield className="h-7 w-7" />
+            <div className={`flex h-14 w-14 items-center justify-center rounded-xl text-white ${
+              isProjectClan 
+                ? "bg-gradient-to-br from-chart-1 to-chart-3" 
+                : "bg-primary/20 text-primary"
+            }`}>
+              {isProjectClan ? <Hammer className="h-7 w-7" /> : <Shield className="h-7 w-7" />}
             </div>
             <div>
-              <h3 className="font-display text-lg font-semibold">{clan.name}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-display text-lg font-semibold">{clan.name}</h3>
+                <Badge className="text-xs" variant={isProjectClan ? "default" : "secondary"}>
+                  {isProjectClan ? "Project" : "Interest"}
+                </Badge>
+              </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Users className="h-4 w-4" />
                 <span>{clan.memberCount}/{clan.maxMembers} members</span>
@@ -113,13 +132,25 @@ function ClanCard({ clan, isMember }: { clan: Clan; isMember: boolean }) {
           {clan.description}
         </p>
 
-        {clan.focus && clan.focus.length > 0 && (
+        {isProjectClan && clan.projectGoal && (
+          <div className="mt-3 rounded-lg bg-accent/50 p-3">
+            <p className="text-xs font-medium text-foreground">Project Goal</p>
+            <p className="text-sm text-muted-foreground line-clamp-1">{clan.projectGoal}</p>
+          </div>
+        )}
+
+        {(isProjectClan ? clan.skillsNeeded : clan.focus) && (isProjectClan ? clan.skillsNeeded : clan.focus).length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">
-            {clan.focus.slice(0, 3).map((focus, i) => (
+            {(isProjectClan ? clan.skillsNeeded : clan.focus).slice(0, 3).map((item, i) => (
               <Badge key={i} variant="outline" className="text-xs">
-                {focus}
+                {item}
               </Badge>
             ))}
+            {(isProjectClan ? clan.skillsNeeded : clan.focus).length > 3 && (
+              <Badge variant="outline" className="text-xs">
+                +{(isProjectClan ? clan.skillsNeeded : clan.focus).length - 3}
+              </Badge>
+            )}
           </div>
         )}
 
@@ -149,6 +180,7 @@ function ClanCard({ clan, isMember }: { clan: Clan; isMember: boolean }) {
             onClick={() => !isMember && joinClan.mutate()}
             disabled={isMember || joinClan.isPending}
             asChild={isMember}
+            data-testid={`button-${isMember ? "view" : "join"}-clan-${clan.id}`}
           >
             {isMember ? (
               <Link href={`/clans/${clan.id}`}>
@@ -170,6 +202,7 @@ function ClanCard({ clan, isMember }: { clan: Clan; isMember: boolean }) {
 export default function Clans() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState<"all" | "interest" | "project">("all");
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -189,6 +222,8 @@ export default function Clans() {
     defaultValues: {
       name: "",
       description: "",
+      type: "interest",
+      projectGoal: "",
     },
   });
 
@@ -215,10 +250,13 @@ export default function Clans() {
     },
   });
 
-  const filteredClans = clans?.filter((clan) =>
-    clan.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    clan.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredClans = clans?.filter((clan) => {
+    const matchesSearch =
+      clan.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      clan.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = filterType === "all" || clan.type === filterType;
+    return matchesSearch && matchesType;
+  });
 
   if (isLoading) {
     return (
@@ -239,7 +277,7 @@ export default function Clans() {
         <div>
           <h1 className="font-display text-3xl font-bold">Tech Clans</h1>
           <p className="mt-1 text-muted-foreground">
-            Join forces with developers for hackathons and competitions
+            Join interest-based communities or collaborate on projects with diverse skill sets
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -253,7 +291,7 @@ export default function Clans() {
             <DialogHeader>
               <DialogTitle>Create New Clan</DialogTitle>
               <DialogDescription>
-                Start your own clan and build a team for hackathons and projects.
+                Create an interest-based community or a project-driven team.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -280,6 +318,40 @@ export default function Clans() {
                 />
                 <FormField
                   control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Clan Type</FormLabel>
+                      <FormControl>
+                        <RadioGroup value={field.value} onValueChange={field.onChange}>
+                          <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+                            <RadioGroupItem value="interest" id="type-interest" />
+                            <label htmlFor="type-interest" className="flex-1 cursor-pointer">
+                              <div className="flex items-center gap-2">
+                                <Sparkles className="h-4 w-4 text-primary" />
+                                <span className="font-medium">Interest-Based</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">Group of developers with shared interests</p>
+                            </label>
+                          </div>
+                          <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+                            <RadioGroupItem value="project" id="type-project" />
+                            <label htmlFor="type-project" className="flex-1 cursor-pointer">
+                              <div className="flex items-center gap-2">
+                                <Hammer className="h-4 w-4 text-chart-1" />
+                                <span className="font-medium">Project-Driven</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">Collaborate to build something together</p>
+                            </label>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
                   name="description"
                   render={({ field }) => (
                     <FormItem>
@@ -295,6 +367,25 @@ export default function Clans() {
                     </FormItem>
                   )}
                 />
+                {form.watch("type") === "project" && (
+                  <FormField
+                    control={form.control}
+                    name="projectGoal"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Project Goal</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="What will your team build?"
+                            {...field}
+                            data-testid="input-clan-project-goal"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 <Button
                   type="submit"
                   className="w-full"
@@ -328,7 +419,7 @@ export default function Clans() {
       )}
 
       <div>
-        <div className="mb-4 flex items-center gap-4">
+        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -338,6 +429,34 @@ export default function Clans() {
               className="pl-10"
               data-testid="input-search-clans"
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge
+              variant={filterType === "all" ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setFilterType("all")}
+              data-testid="filter-all-clans"
+            >
+              All
+            </Badge>
+            <Badge
+              variant={filterType === "interest" ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setFilterType("interest")}
+              data-testid="filter-interest-clans"
+            >
+              <Sparkles className="mr-1 h-3 w-3" />
+              Interest
+            </Badge>
+            <Badge
+              variant={filterType === "project" ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setFilterType("project")}
+              data-testid="filter-project-clans"
+            >
+              <Hammer className="mr-1 h-3 w-3" />
+              Project
+            </Badge>
           </div>
         </div>
 

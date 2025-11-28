@@ -152,6 +152,9 @@ export const clans = pgTable("clans", {
   memberCount: integer("member_count").default(1),
   maxMembers: integer("max_members").default(50),
   focus: text("focus").array().default(sql`'{}'::text[]`),
+  type: varchar("type").default("interest"),
+  projectGoal: text("project_goal"),
+  skillsNeeded: text("skills_needed").array().default(sql`'{}'::text[]`),
   isPublic: boolean("is_public").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
