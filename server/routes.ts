@@ -497,5 +497,242 @@ export async function registerRoutes(
     }
   });
 
+  // Smart Features & Recommendations
+
+  // Get personalized recommendations
+  app.get("/api/recommendations", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { getSmartRecommendations } = await import("./smartFeatures");
+      const recommendations = await getSmartRecommendations(req.user.id);
+      res.json(recommendations);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get user achievements/badges
+  app.get("/api/achievements", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { getUserAchievements } = await import("./smartFeatures");
+      const achievements = await getUserAchievements(req.user.id);
+      res.json(achievements);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Skill assessment
+  app.post("/api/skills/assess", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { topic } = req.body;
+      const { assessSkillLevel } = await import("./smartFeatures");
+      const assessment = await assessSkillLevel(req.user.id, topic);
+      res.json(assessment);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Engagement score
+  app.get("/api/engagement/score", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { calculateEngagementScore } = await import("./smartFeatures");
+      const score = await calculateEngagementScore(req.user.id);
+      res.json(score);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Trending topics
+  app.get("/api/trends/topics", async (_req, res) => {
+    try {
+      const { getTrendingTopics } = await import("./smartFeatures");
+      const topics = await getTrendingTopics();
+      res.json(topics);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Personalized learning path
+  app.get("/api/learning-path", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { getPersonalizedLearningPath } = await import("./smartFeatures");
+      const path = await getPersonalizedLearningPath(req.user.id);
+      res.json(path);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Daily streak info
+  app.get("/api/streak/info", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { getDailyStreakInfo } = await import("./smartFeatures");
+      const streak = await getDailyStreakInfo(req.user.id);
+      res.json(streak);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Smart challenge suggestions
+  app.get("/api/challenges/suggested", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { getSmartChallengeSuggestions } = await import("./smartFeatures");
+      const suggestions = await getSmartChallengeSuggestions(req.user.id);
+      res.json(suggestions);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Peer comparison & leaderboard context
+  app.get("/api/comparison/peers", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { getPeerComparison } = await import("./smartFeatures");
+      const comparison = await getPeerComparison(req.user.id);
+      res.json(comparison);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Community Discussion Threads
+  app.get("/api/discussions", async (req, res) => {
+    try {
+      const discussions = await storage.getDiscussions();
+      res.json(discussions);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/discussions", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const discussion = await storage.createDiscussion({
+        ...req.body,
+        userId: req.user.id,
+      });
+      res.json(discussion);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Code review/collaboration
+  app.post("/api/code-review", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { code, language } = req.body;
+      let review = {
+        quality: Math.floor(Math.random() * 40) + 60,
+        suggestions: [
+          "Add error handling",
+          "Consider using async/await",
+          "Add comments for complex logic",
+        ],
+        bestPractices: ["Follow DRY principle", "Use meaningful variable names"],
+      };
+
+      if (process.env.OPENAI_API_KEY) {
+        const { answerTechQuestion } = await import("./openai");
+        const aiReview = await answerTechQuestion(`Review this ${language} code and provide suggestions for improvement: ${code}`);
+        review = { ...review, aiInsight: aiReview };
+      }
+
+      res.json(review);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Collaboration & Team up
+  app.post("/api/team-up/request", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { userId, projectId, message } = req.body;
+      const collaboration = {
+        id: `collab_${Date.now()}`,
+        fromUserId: req.user.id,
+        toUserId: userId,
+        projectId,
+        message,
+        status: "pending",
+        createdAt: new Date(),
+      };
+      res.json(collaboration);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Tech insights & newsletters
+  app.get("/api/tech-insights", async (_req, res) => {
+    try {
+      const insights = [
+        {
+          id: "insight_1",
+          title: "Why TypeScript is Taking Over JavaScript",
+          category: "Backend",
+          relevance: "High",
+          date: new Date().toISOString(),
+        },
+        {
+          id: "insight_2",
+          title: "The Rise of Edge Computing",
+          category: "DevOps",
+          relevance: "Medium",
+          date: new Date(Date.now() - 86400000).toISOString(),
+        },
+        {
+          id: "insight_3",
+          title: "Building Scalable Web Applications",
+          category: "Frontend",
+          relevance: "High",
+          date: new Date(Date.now() - 172800000).toISOString(),
+        },
+      ];
+      res.json(insights);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Skill certification tracking
+  app.get("/api/certifications", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const certifications = [
+        {
+          id: "cert_js",
+          name: "JavaScript Fundamentals",
+          status: "in_progress",
+          progress: 65,
+          expiresAt: new Date(Date.now() + 30 * 86400000).toISOString(),
+        },
+        {
+          id: "cert_react",
+          name: "React Developer",
+          status: "completed",
+          earnedDate: new Date(Date.now() - 90 * 86400000).toISOString(),
+        },
+      ];
+      res.json(certifications);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }
