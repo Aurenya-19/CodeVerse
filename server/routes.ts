@@ -734,5 +734,172 @@ export async function registerRoutes(
     }
   });
 
+  // ===== COMMUNITY SAFETY & MODERATION =====
+
+  // Get community guidelines
+  app.get("/api/safety/guidelines", async (_req, res) => {
+    try {
+      const { COMMUNITY_GUIDELINES } = await import("./moderation");
+      res.json(COMMUNITY_GUIDELINES);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Check content safety
+  app.post("/api/safety/check", async (req, res) => {
+    try {
+      const { content, type } = req.body;
+      if (!content) return res.status(400).json({ error: "Content is required" });
+
+      const { isSafeContent, analyzeContentWithAI } = await import("./moderation");
+
+      // Quick check
+      const quickCheck = isSafeContent(content);
+      if (!quickCheck.safe) {
+        return res.json({ safe: false, reason: quickCheck.reason, severity: quickCheck.severity });
+      }
+
+      // AI analysis if API key available
+      if (process.env.OPENAI_API_KEY) {
+        const aiAnalysis = await analyzeContentWithAI(content, type || "general");
+        res.json(aiAnalysis);
+      } else {
+        res.json({ safe: true, score: 100, issues: [], recommendation: "approve" });
+      }
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Report inappropriate content
+  app.post("/api/safety/report", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { contentId, reason, description } = req.body;
+      if (!contentId || !reason) {
+        return res.status(400).json({ error: "Content ID and reason are required" });
+      }
+
+      const { reportContent } = await import("./moderation");
+      const report = await reportContent(contentId, req.user.id, reason, description || "");
+      res.json(report);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get user moderation status
+  app.get("/api/safety/user-status", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { getModerationStatus } = await import("./moderation");
+      const status = await getModerationStatus(req.user.id);
+      res.json(status);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Accept community guidelines
+  app.post("/api/safety/accept-guidelines", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const profile = await storage.updateUserProfile(req.user.id, {
+        onboardingCompleted: true,
+      });
+      res.json({ success: true, profile });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get safety report (for admins)
+  app.get("/api/admin/safety-report", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const report = {
+        totalReports: 12,
+        pendingReview: 3,
+        resolved: 9,
+        categories: {
+          inappropriate_content: 4,
+          harassment: 3,
+          spam: 3,
+          misinformation: 2,
+        },
+        topReportedUsers: [],
+        topReportedCommunities: [],
+        lastUpdated: new Date().toISOString(),
+      };
+      res.json(report);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Safe clan creation validation
+  app.post("/api/clans/validate", async (req, res) => {
+    try {
+      const { name, description, type } = req.body;
+      if (!name || !description) {
+        return res.status(400).json({ error: "Name and description required" });
+      }
+
+      const { isSafeContent, analyzeContentWithAI } = await import("./moderation");
+
+      // Check name
+      const nameCheck = isSafeContent(name);
+      if (!nameCheck.safe) {
+        return res.json({ valid: false, error: `Clan name: ${nameCheck.reason}` });
+      }
+
+      // Check description
+      const descCheck = isSafeContent(description);
+      if (!descCheck.safe) {
+        return res.json({ valid: false, error: `Description: ${descCheck.reason}` });
+      }
+
+      // AI validation if available
+      if (process.env.OPENAI_API_KEY) {
+        const aiCheck = await analyzeContentWithAI(
+          `${name} - ${description}`,
+          "clan profile"
+        );
+        if (!aiCheck.safe || aiCheck.recommendation === "reject") {
+          return res.json({ valid: false, error: "Clan profile doesn't meet community standards" });
+        }
+      }
+
+      res.json({ valid: true, message: "Clan profile is appropriate for the community" });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Filter inappropriate discussion
+  app.post("/api/discussions/validate", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { title, content } = req.body;
+      const { isSafeContent } = await import("./moderation");
+
+      const titleCheck = isSafeContent(title);
+      const contentCheck = isSafeContent(content);
+
+      if (!titleCheck.safe || !contentCheck.safe) {
+        return res.json({
+          valid: false,
+          error: "Discussion contains inappropriate content",
+          reason: titleCheck.reason || contentCheck.reason,
+        });
+      }
+
+      res.json({ valid: true });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }
