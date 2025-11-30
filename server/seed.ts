@@ -455,7 +455,7 @@ export async function seedDatabase() {
         ]),
         xpReward: course.xp,
         enrollments: 500 + i * 100,
-        rating: 4 + Math.random(),
+        rating: Math.floor(4 + Math.random()),
         tags: [course.cat],
       });
     }
