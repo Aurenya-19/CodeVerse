@@ -15,7 +15,6 @@ import {
   Star,
   Globe,
 } from "lucide-react";
-import codeVerseLogo from "@assets/codeverse-logo.png";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
@@ -73,7 +72,7 @@ export default function Landing() {
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            <img src={codeVerseLogo} alt="CodeVerse Logo" className="h-10 w-10" />
+            <img src="/codeverse-logo.png" alt="CodeVerse Logo" className="h-10 w-10" />
             <span className="font-display text-xl font-bold">CodeVerse</span>
           </div>
           <div className="flex items-center gap-4">
@@ -223,7 +222,7 @@ export default function Landing() {
         <div className="mx-auto max-w-7xl px-4">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="flex items-center gap-3">
-              <img src={codeVerseLogo} alt="CodeVerse Logo" className="h-8 w-8" />
+              <img src="/codeverse-logo.png" alt="CodeVerse Logo" className="h-8 w-8" />
               <span className="font-display font-bold">CodeVerse</span>
             </div>
             <p className="text-sm text-muted-foreground">
