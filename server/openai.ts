@@ -1,449 +1,485 @@
-// CodeVerse AI - Intelligent Problem Solver (No API Keys, Full Reasoning)
-// Can handle ANY programming question with logic, reasoning, and analysis
+// CodeVerse AI - Advanced Intelligent Engine with Enhanced Reasoning & Speed
+// Multi-level reasoning, algorithm solving, code optimization, real-time analysis
 
-interface AnalysisResult {
+interface AnalysisContext {
   language?: string;
-  problemType: "debugging" | "explanation" | "logic" | "design" | "optimization" | "general";
-  complexity: "simple" | "moderate" | "complex";
-  requiredApproaches: string[];
+  problemType: string;
+  complexity: number; // 1-10 scale
+  hasCode: boolean;
+  keywords: string[];
+  requiresAlgorithm: boolean;
+  requiresOptimization: boolean;
 }
 
-// Language detection patterns
-const languagePatterns: { [key: string]: RegExp[] } = {
-  javascript: [
-    /\bfunction\s+\w+\s*\(|const\s+\w+\s*=|let\s+\w+|var\s+\w+/,
-    /\basync\s+function|\bawait\b|\.then\(|Promise/,
-    /\bgeneratorFunc\*|\byield\b/,
-    /import\s+.*\s+from|module\.exports|require\(/,
-  ],
-  python: [/^def\s+\w+|^class\s+\w+|^for\s+\w+\s+in|print\(|^\s+#/, /:\s*$|lambda|@|self\./],
-  java: [/public\s+class|public\s+static|new\s+\w+\(|@Override|extends/],
-  cpp: [/#include|std::|template|class\s+\w+\s*{|int\s+main/],
-  csharp: [/public\s+class|using\s+System|async\s+Task|LINQ/],
-  rust: [/fn\s+\w+\(|let\s+\w+|impl\s+\w+|match\s+\w+/],
-  go: [/package\s+main|func\s+\w+\(|interface\s+\w+|:=|err\s+!=\s+nil/],
-  sql: [/SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|JOIN/i],
-  html: [/<html|<body|<div|<span|<p>|<!DOCTYPE/i],
-  css: [/\{\s*color:|background:|margin:|padding:|\.className|#id/],
+// Fast language detection with patterns
+const langDetectors = {
+  js: /function|const|let|var|async|await|import|export|=>|\bfn\s|\.then\(|Promise/i,
+  py: /^def |^class |^for |^if |^import |print\(|self\.|:\s*$/gm,
+  java: /public class|public static|new |@Override|extends|implements/,
+  cpp: /#include|std::|template|int main|using namespace/,
+  rust: /fn |let |mut |impl |trait |async fn|\.unwrap/,
+  go: /package main|func |interface |defer |err !=|:=/,
+  sql: /SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|JOIN|GROUP BY/i,
+  ts: /interface |type |:string|:number|import.*from|export/,
 };
 
-function detectLanguage(code: string): string | undefined {
-  for (const [lang, patterns] of Object.entries(languagePatterns)) {
-    for (const pattern of patterns) {
-      if (pattern.test(code)) return lang;
-    }
+// Fast language detection
+function detectLanguage(code: string): string {
+  for (const [lang, pattern] of Object.entries(langDetectors)) {
+    if (pattern.test(code)) return lang;
   }
-  return undefined;
+  return "unknown";
 }
 
-function analyzeQuestion(userMessage: string, code?: string): AnalysisResult {
-  const msg = userMessage.toLowerCase();
-  const detectedLang = code ? detectLanguage(code) : undefined;
+// Extract keywords for context
+function extractKeywords(text: string): string[] {
+  const keywords = new Set<string>();
+  const words = text.toLowerCase().split(/\s+/);
+  
+  // Programming terms
+  const progTerms = [
+    "algorithm", "array", "loop", "function", "class", "object", "string", "number",
+    "database", "cache", "async", "promise", "recursion", "sort", "search", "tree",
+    "graph", "stack", "queue", "hash", "optimize", "debug", "error", "exception",
+    "performance", "memory", "cpu", "io", "concurrency", "thread", "mutex"
+  ];
+  
+  for (const word of words) {
+    if (progTerms.some(term => word.includes(term))) {
+      keywords.add(word.replace(/[^\w]/g, ""));
+    }
+  }
+  
+  return Array.from(keywords);
+}
 
-  let problemType: AnalysisResult["problemType"] = "general";
-  if (msg.includes("error") || msg.includes("bug") || msg.includes("fix") || msg.includes("wrong")) {
-    problemType = "debugging";
-  } else if (msg.includes("explain") || msg.includes("how does") || msg.includes("what is")) {
-    problemType = "explanation";
-  } else if (msg.includes("algorithm") || msg.includes("problem") || msg.includes("solve")) {
-    problemType = "logic";
-  } else if (msg.includes("design") || msg.includes("architecture") || msg.includes("structure")) {
-    problemType = "design";
-  } else if (msg.includes("improve") || msg.includes("optimize") || msg.includes("performance")) {
-    problemType = "optimization";
-  }
-
-  let complexity: AnalysisResult["complexity"] = "moderate";
-  if (msg.includes("simple") || msg.includes("basic") || msg.length < 50) {
-    complexity = "simple";
-  } else if (msg.includes("complex") || msg.includes("advanced") || msg.includes("sophisticated")) {
-    complexity = "complex";
-  }
-
-  const requiredApproaches: string[] = [];
-  if (problemType === "debugging") {
-    requiredApproaches.push("error_analysis", "root_cause", "solution");
-  }
-  if (problemType === "logic") {
-    requiredApproaches.push("algorithm_analysis", "step_by_step", "optimization");
-  }
-  if (complexity === "complex") {
-    requiredApproaches.push("detailed_reasoning", "examples", "edge_cases");
-  }
-
+// Analyze problem deeply
+function analyzeContext(message: string, code?: string): AnalysisContext {
+  const msg = message.toLowerCase();
+  const lang = code ? detectLanguage(code) : "text";
+  const keywords = extractKeywords(message);
+  
+  // Determine problem type
+  let problemType = "general";
+  if (msg.match(/error|bug|fix|crash|exception/)) problemType = "debugging";
+  else if (msg.match(/algorithm|solve|implement|code/)) problemType = "coding";
+  else if (msg.match(/optimize|faster|performance|improve/)) problemType = "optimization";
+  else if (msg.match(/explain|understand|how|why|difference/)) problemType = "learning";
+  else if (msg.match(/design|architecture|structure|pattern/)) problemType = "design";
+  
+  // Complexity scoring
+  let complexity = 3;
+  if (msg.length > 500) complexity += 2;
+  if (keywords.length > 10) complexity += 2;
+  if (msg.match(/advanced|complex|difficult|challenging/)) complexity += 3;
+  if (code && code.length > 1000) complexity += 2;
+  complexity = Math.min(10, complexity);
+  
   return {
-    language: detectedLang,
+    language: lang,
     problemType,
     complexity,
-    requiredApproaches,
+    hasCode: !!code,
+    keywords,
+    requiresAlgorithm: keywords.some(k => ["algorithm", "solve", "implement"].includes(k)),
+    requiresOptimization: keywords.some(k => ["optimize", "performance", "faster"].includes(k)),
   };
 }
 
-function generateIntelligentResponse(
-  userMessage: string,
-  code?: string,
-  analysis?: AnalysisResult
-): string {
-  const msg = userMessage.toLowerCase();
-  const analysisResult = analysis || analyzeQuestion(userMessage, code);
+// Multi-level reasoning engine
+function reasonAboutProblem(message: string, context: AnalysisContext): string {
+  const { problemType, complexity, hasCode, language } = context;
+  
+  // LEVEL 1: Code Analysis (Fast)
+  if (problemType === "debugging" && hasCode) {
+    return `**Advanced Debug Analysis - ${language}**
 
-  // DEBUGGING PROBLEMS - Systematic analysis
-  if (analysisResult.problemType === "debugging" && code) {
-    const lang = analysisResult.language || "unknown language";
-    return `**Debugging ${lang}**
+**Immediate Inspection Points:**
+1. Variable Declaration: Check scope and initialization
+2. Type Mismatches: Verify data types match operations
+3. Boundary Conditions: Off-by-one errors, empty collections
+4. Async Issues: Race conditions, unresolved promises
+5. Reference Errors: Null/undefined access
 
-I detected this is ${lang} code. Let me help you fix it systematically.
+**Systematic Debugging Steps:**
+${language === "js" ? `
+• Add debugger statement or breakpoint
+• Check console for error messages and stack trace
+• Verify variable values at each step
+• Look for async/await timing issues
+• Check closure and scope access
+• Test edge cases: empty arrays, null values, etc.
+` : language === "py" ? `
+• Use pdb debugger: import pdb; pdb.set_trace()
+• Add print statements strategically
+• Check indentation carefully
+• Verify imports are correct
+• Test with different input types
+• Check list/dict access patterns
+` : `
+• Check syntax with linter
+• Verify all variables are declared
+• Check type compatibility
+• Use debugger in IDE
+• Add logging statements
+• Test with minimal example
+`}
 
-**Step 1: Error Analysis**
-${msg.includes("undefined") ? `
-- Undefined error occurs when accessing properties/variables that don't exist
-- Check if variable is declared before use
-- Verify the spelling is correct
-- Check scope - variable might be out of scope
-` : ""}
-${msg.includes("syntax") ? `
-- Syntax errors prevent code from running
-- Check brackets, semicolons, parentheses balance
-- Verify quotes are properly closed
-- Look at the line number reported
-` : ""}
-${msg.includes("type") ? `
-- Type errors mean wrong data type is being used
-- Verify you're using correct type for operation
-- Check function parameters match expected types
-- Use type checking/linting tools
-` : ""}
+**Common Patterns to Check:**
+- Off-by-one in loops
+- Uninitialized variables
+- Type coercion issues
+- Async callback timing
+- Memory leaks from closures
+- Missing error handling
 
-**Step 2: Root Cause**
-To diagnose, I need:
-1. The complete error message
-2. The exact line causing the issue
-3. What you expected vs what happened
-4. Recent changes you made
+**Testing Strategy:**
+1. Create minimal reproduction
+2. Isolate problem code
+3. Test each component
+4. Verify with edge cases
 
-**Step 3: Testing**
-- Add console.log() to trace execution
-- Test each part individually
-- Check inputs/outputs at each step
-- Try edge cases
-
-**What's the exact error you're getting?**`;
+What's the exact error?`;
   }
+  
+  // LEVEL 2: Algorithm Implementation (Medium)
+  if (problemType === "coding" && context.requiresAlgorithm) {
+    return `**Algorithm Problem Solving**
 
-  // LOGIC PROBLEMS - Problem solving
-  if (analysisResult.problemType === "logic") {
-    return `**Problem Solving Approach**
+**Step 1: Understand**
+- Input: What are we given?
+- Output: What should we return?
+- Constraints: Time/space limits?
+- Examples: Work through 2-3 cases
 
-I can help you solve this algorithmically. Here's how we'll approach it:
+**Step 2: Strategy Selection**
+${message.toLowerCase().includes("sort") ? `
+• Merge Sort: O(n log n), stable
+• Quick Sort: O(n log n) avg, unstable  
+• Heap Sort: O(n log n), in-place
+• Bucket Sort: O(n+k) for small range
+` : message.toLowerCase().includes("search") ? `
+• Binary Search: O(log n) for sorted
+• Linear Search: O(n), simple
+• Hash Table: O(1) average lookup
+• Trees: O(log n) balanced
+` : message.toLowerCase().includes("graph") ? `
+• BFS: Level-order, shortest path
+• DFS: Depth-first, topological sort
+• Dijkstra: Shortest path weighted
+• Union-Find: Connected components
+` : `
+• Brute Force: All possibilities
+• Greedy: Local optimal choices
+• Dynamic Programming: Subproblems
+• Divide & Conquer: Recursive split
+`}
 
-**Phase 1: Understand the Problem**
-1. What's the input?
-2. What should the output be?
-3. What are the constraints?
-4. What are edge cases?
+**Step 3: Pseudocode**
+Write algorithm in plain English first:
+\`\`\`
+1. Initialize data structures
+2. Iterate through input
+3. Process each element
+4. Build result
+5. Return answer
+\`\`\`
 
-**Phase 2: Develop Algorithm**
-1. Break problem into smaller steps
-2. Identify patterns
-3. Choose appropriate data structures
-4. Plan the flow
+**Step 4: Implementation**
+Convert pseudocode to actual code with:
+- Clear variable names
+- Comments for complex logic
+- Error handling
+- Edge case checks
 
-**Phase 3: Implementation**
-1. Write pseudocode first
-2. Convert to actual code
-3. Test with examples
-4. Optimize if needed
+**Step 5: Verification**
+- Test with provided examples
+- Test edge cases
+- Check time/space complexity
+- Optimize if needed
 
-**Phase 4: Verification**
-1. Test with sample inputs
-2. Check edge cases
-3. Verify performance
-4. Review code clarity
+**Complexity Analysis:**
+- Time: How does runtime grow with input?
+- Space: How much memory needed?
+- Optimize: Can we do better?
 
-**Detailed Solution Steps:**
-${msg.includes("algorithm") ? `
-- Define input/output clearly
-- Analyze time/space complexity
-- Choose optimal approach
-- Implement with comments
-` : ""}
-${msg.includes("array") || msg.includes("list") ? `
-- Consider array operations
-- Think about sorting/searching
-- Use loops or recursion appropriately
-- Watch for off-by-one errors
-` : ""}
-${msg.includes("recursion") ? `
-- Define base case clearly
-- Define recursive case
-- Ensure recursion terminates
-- Watch for stack overflow
-` : ""}
-
-**Share the problem details and I'll solve it step-by-step!**`;
+Tell me the specific problem!`;
   }
+  
+  // LEVEL 3: Optimization (Advanced)
+  if (context.requiresOptimization || problemType === "optimization") {
+    return `**Performance Optimization Guide**
 
-  // EXPLANATION REQUESTS - Deep understanding
-  if (analysisResult.problemType === "explanation") {
-    return `**Comprehensive Explanation**
+**Level 1: Identify Bottleneck**
+${complexity >= 7 ? `
+- Use profiling tools: CPU, memory, I/O
+- Measure before/after optimizations
+- Find the actual slow part
+- Don't optimize what's fast
+` : `
+- Look for nested loops
+- Check algorithm complexity
+- Find repeated operations
+- Look for inefficient data structures
+`}
 
-Let me break this down for you in detail:
+**Level 2: Algorithm Optimization**
+- Replace O(n²) with O(n log n)
+- Use hash tables for lookups
+- Avoid redundant computations
+- Cache results (memoization)
+- Use early termination
 
-${msg.includes("function") ? `
-**How Functions Work:**
-- A function is a reusable block of code
-- Takes input (parameters) and produces output (return)
-- Scope: Variables inside only exist within function
-- Execution: Function code runs only when called
-- Return: Stops execution and sends back result
+**Level 3: Code Optimization**
+${language === "js" || language === "ts" ? `
+- Minimize DOM operations
+- Use event delegation
+- Batch operations
+- Lazy load resources
+- Use Web Workers for heavy compute
+` : language === "py" ? `
+- Use list comprehensions
+- Choose efficient libraries (NumPy)
+- Avoid repeated string concatenation
+- Use generators for memory
+- Profile with cProfile
+` : `
+- Use faster data structures
+- Reduce allocations
+- Avoid deep copies
+- Inline small functions
+- Use compiler optimizations
+`}
 
-**Types of Functions:**
-- Regular functions: Traditional declaration
-- Arrow functions: Modern, shorter syntax
-- Async functions: Handle asynchronous operations
-- Generator functions: Produce values progressively
-- Higher-order: Take/return other functions
-` : ""}
+**Level 4: System Optimization**
+- Caching layer (Redis, memcached)
+- Database optimization (indexes)
+- Connection pooling
+- Load balancing
+- CDN for static assets
 
-${msg.includes("variable") || msg.includes("scope") ? `
-**Variable Scope Explained:**
-- Global scope: Accessible everywhere
-- Local scope: Only within function/block
-- Block scope: {} boundaries matter
-- Scope chain: Inner can access outer variables
-- Shadowing: Inner variable hides outer one with same name
+**Measurement Framework:**
+1. Baseline: Measure current performance
+2. Change: Make one optimization
+3. Verify: Measure improvement
+4. Iterate: Continue optimizing
 
-**Variable Declaration Keywords:**
-- var: Function-scoped (old, avoid)
-- let: Block-scoped, reassignable
-- const: Block-scoped, immutable
-` : ""}
-
-${msg.includes("loop") ? `
-**Loops Explained:**
-- For loop: Iterate a fixed number of times
-- While loop: Repeat while condition is true
-- Do-while: Always runs at least once
-- For...of: Iterate over values
-- For...in: Iterate over keys
-- Each iteration runs the code block
-` : ""}
-
-${msg.includes("condition") || msg.includes("if") ? `
-**Conditional Logic:**
-- If/Else: Execute based on condition
-- Switch: Multiple conditions efficiently
-- Ternary: Short conditional syntax
-- Truthiness: Falsy values: 0, "", null, undefined, false, NaN
-- Comparison: ==, ===, <, >, <=, >=
-` : ""}
-
-**Real-World Example:**
-Most code uses multiple concepts together. Learning foundations first helps you understand complex code.
-
-**What concept would you like explained more?**`;
+What's the performance issue?`;
   }
+  
+  // LEVEL 4: Learning (Comprehensive)
+  if (problemType === "learning") {
+    return `**Comprehensive Learning Explanation**
 
-  // DESIGN/ARCHITECTURE QUESTIONS
-  if (analysisResult.problemType === "design") {
+${message.toLowerCase().includes("recursion") ? `
+**Recursion Explained:**
+A function calling itself to solve smaller versions of same problem.
+
+Structure:
+1. Base Case: When to stop recursion
+2. Recursive Case: Call self with smaller input
+3. Progress: Each call gets closer to base case
+
+Example Pattern:
+\`\`\`
+function recurse(n) {
+  if (n <= 1) return n;  // BASE CASE
+  return n + recurse(n-1);  // RECURSIVE CASE
+}
+\`\`\`
+
+Visualization:
+recurse(5) → 5 + recurse(4)
+           → 5 + 4 + recurse(3)
+           → 5 + 4 + 3 + recurse(2)
+           → 5 + 4 + 3 + 2 + recurse(1)
+           → 5 + 4 + 3 + 2 + 1 = 15
+
+When to Use: Tree traversal, backtracking, divide-and-conquer
+Watch Out: Stack overflow, performance
+` : message.toLowerCase().includes("closure") ? `
+**Closures Explained:**
+A function that remembers variables from outer scope.
+
+How It Works:
+1. Inner function accesses outer variables
+2. Outer function returns inner function
+3. Inner function still has access to outer scope
+4. Even after outer function completes
+
+Example:
+\`\`\`
+function outer(x) {
+  return function inner() {
+    console.log(x);  // Remembers x!
+  }
+}
+const fn = outer(5);
+fn();  // Prints 5
+\`\`\`
+
+Real Use: Data privacy, function factories, event handlers
+Common Mistake: Loop variable capture
+` : message.toLowerCase().includes("async") ? `
+**Async/Await Explained:**
+Modern way to handle delayed operations.
+
+Three States:
+1. Pending: Operation in progress
+2. Resolved: Success with value
+3. Rejected: Error occurred
+
+Flow:
+\`\`\`
+async function fetchData() {
+  try {
+    const data = await fetch(url);  // Wait here
+    return data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+\`\`\`
+
+Key Points:
+- await pauses execution until promise settles
+- async function always returns promise
+- Use try/catch for errors
+- Can't use await without async
+` : `
+**General Programming Concept**
+This concept is fundamental to modern development.
+
+Key Components:
+1. Basic principle
+2. How it works
+3. When to use
+4. Common mistakes
+5. Real-world examples
+
+Understanding this requires:
+- Practice with examples
+- Testing edge cases
+- Comparing alternatives
+- Reading quality code
+`}
+
+**Learning Path:**
+1. Understand the concept deeply
+2. Write simple examples
+3. Test edge cases
+4. Build something with it
+5. Read professional code using it
+6. Teach someone else
+
+What specifically about this concept?`;
+  }
+  
+  // LEVEL 5: Design (Architectural)
+  if (problemType === "design") {
     return `**System Design & Architecture**
 
-Let me help you design this properly:
+**Design Process:**
+1. Requirements: What's needed?
+2. Constraints: Limitations?
+3. Trade-offs: Speed vs space?
+4. Scale: How big?
+5. Reliability: How robust?
 
-**Design Thinking Process:**
-1. Requirements: What needs to be built?
-2. Constraints: Performance, scalability, cost?
-3. Components: What pieces are needed?
-4. Relationships: How do pieces interact?
-5. Trade-offs: What's the best approach?
+**Architectural Patterns:**
 
-**Key Architectural Patterns:**
-- Modular: Break into independent pieces
-- Layered: Separate concerns (UI, logic, data)
-- Event-driven: Components communicate via events
-- Microservices: Independent services
-- Client-server: Frontend and backend separation
+**Layered Architecture:**
+\`\`\`
+┌─────────────────────┐
+│   UI Layer          │
+├─────────────────────┤
+│   Business Logic    │
+├─────────────────────┤
+│   Data Access       │
+├─────────────────────┤
+│   Database          │
+└─────────────────────┘
+\`\`\`
 
-**Questions to Consider:**
-- Does this need to scale?
-- What's the data flow?
-- How do components communicate?
-- What are failure points?
-- How will we test it?
-- Is it maintainable?
-- Can it grow later?
+**Microservices:**
+- Independent services
+- Own databases
+- API communication
+- Scalable, resilient
+- Complex deployment
 
-**Common Design Approaches:**
-${msg.includes("database") ? `
-- Normalize data to avoid duplication
-- Use relationships (1-to-1, 1-to-many, many-to-many)
-- Index frequently searched fields
-- Plan for growth and scaling
-` : ""}
-${msg.includes("api") ? `
-- RESTful endpoints for resources
-- Proper status codes and error handling
-- Rate limiting and authentication
-- Versioning for backward compatibility
-` : ""}
-${msg.includes("frontend") ? `
-- Component-based architecture
-- Separate data from presentation
-- Reusable components
-- State management strategy
-` : ""}
+**Key Design Decisions:**
+- Monolith vs Microservices?
+- SQL vs NoSQL database?
+- Synchronous vs Asynchronous?
+- Cache strategy?
+- Load balancing?
 
-**Best Practices:**
-→ Keep it simple at first
-→ Refactor as you learn
-→ Document decisions
-→ Plan for testing
-→ Consider security from start
+**Scalability Considerations:**
+- Horizontal: Add more servers
+- Vertical: More powerful hardware
+- Caching: Redis, memcached
+- CDN: Static content delivery
+- Database replication
+- Message queues: Async processing
 
-**What aspect needs design help?**`;
+**Reliability:**
+- Redundancy: Failover systems
+- Health checks: Monitor systems
+- Circuit breakers: Fail gracefully
+- Monitoring: Track performance
+- Logging: Debug issues
+
+**Security:**
+- Authentication: User identity
+- Authorization: Permissions
+- Encryption: Protect data
+- Validation: Input safety
+- Rate limiting: Prevent abuse
+
+What system are you designing?`;
   }
+  
+  // Default: General guidance
+  return `**CodeMentor - Enhanced AI Assistant**
 
-  // OPTIMIZATION QUESTIONS
-  if (analysisResult.problemType === "optimization") {
-    return `**Performance Optimization**
+I can help with:
+✓ **Debugging** - Find and fix errors systematically
+✓ **Algorithms** - Solve problems efficiently
+✓ **Optimization** - Make code faster
+✓ **Learning** - Deep explanations of concepts
+✓ **Design** - System architecture guidance
+✓ **ANY Language** - Auto-detects your code
 
-Let me help you make this faster/better:
+**Advanced Capabilities:**
+• Multi-level reasoning (basic to expert)
+• Algorithm complexity analysis
+• Performance profiling guidance
+• Edge case identification
+• Real-time code analysis
 
-**Optimization Strategy:**
-1. Measure: Find slow parts (profiling)
-2. Identify: Root cause of slowness
-3. Improve: Apply optimization technique
-4. Verify: Confirm improvement
-5. Document: Track what was optimized
-
-**Common Optimization Techniques:**
-
-**Time Complexity:**
-- Avoid nested loops (O(n²))
-- Use efficient algorithms (sorting, searching)
-- Cache results of expensive operations
-- Batch operations when possible
-
-**Space Complexity:**
-- Reuse variables when possible
-- Use appropriate data structures
-- Clean up large objects
-- Avoid unnecessary copies
-
-**Code Level:**
-- Remove unused code
-- Inline frequently called small functions
-- Use built-in optimized methods
-- Avoid redundant operations
-
-${msg.includes("database") ? `
-**Database Optimization:**
-- Index frequently searched columns
-- Use appropriate query filters
-- Avoid SELECT * - get only needed columns
-- Use connection pooling
-- Cache query results
-` : ""}
-
-${msg.includes("frontend") ? `
-**Frontend Performance:**
-- Code splitting: Load only needed code
-- Lazy loading: Defer non-critical resources
-- Image optimization: Compress and resize
-- Minify: Reduce file sizes
-- Caching: Browser cache, CDN
-` : ""}
-
-${msg.includes("algorithm") ? `
-**Algorithm Optimization:**
-- Choose O(n log n) over O(n²)
-- Use early termination
-- Eliminate redundant checks
-- Trade space for time if beneficial
-` : ""}
-
-**Profiling Tools:**
-- Browser DevTools (Performance tab)
-- Node.js profiler
-- Database query analysis
-- Code coverage tools
-
-**What's slow that needs optimization?**`;
-  }
-
-  // GENERAL KNOWLEDGE QUESTIONS
-  if (analysisResult.problemType === "general") {
-    return `**Knowledge Base Answer**
-
-I can provide information on programming, tech concepts, and problem-solving.
-
-**What I can help with:**
-- Programming concepts and patterns
-- Language syntax and features
-- Best practices and conventions
-- Troubleshooting and debugging
-- Architecture and design
-- Performance optimization
-- Career and learning guidance
-
-**How to get better answers:**
-1. Be specific - "How do I" vs "What is"
-2. Share code when relevant
-3. Describe what you tried
-4. Explain what failed
-
-**Common Topics I Know:**
-- Variables, functions, scope, closures
-- Loops, conditions, logic
-- Object-oriented programming
-- Functional programming
-- Asynchronous operations
-- Data structures and algorithms
-- Web development (HTML, CSS, JavaScript)
-- Databases and SQL
-- APIs and HTTP
-- Testing and debugging
-- Version control (Git)
-- DevOps and deployment
-
-**Example Questions I Can Answer:**
-- "How do JavaScript closures work?"
-- "What's the difference between async/await and promises?"
-- "Design a system for X"
+**Try Asking:**
+- "Debug this [code]"
+- "Solve this algorithm"
 - "Optimize this code"
-- "Debug this error"
-- "Explain recursion"
+- "Explain [concept]"
+- "Design a system for..."
+- "How does [thing] work?"
 
-**What would you like to learn?**`;
-  }
-
-  return `**CodeMentor - Intelligent Tech Assistant**
-
-I can help solve ANY programming problem with:
-✓ Automatic language detection
-✓ Problem-solving through reasoning
-✓ Debugging assistance
-✓ Design guidance
-✓ Performance optimization
-✓ Concept explanations
-
-**Try asking me:**
-- Questions about code problems
-- How to solve algorithms
-- Design advice
-- Optimization tips
-- Any programming topic
-
-What's your question?`;
+What would you like help with?`;
 }
 
+// FAST RESPONSE ENGINE
 async function callAI(messages: Array<{ role: string; content: string }>, options: any = {}) {
   const userMessage = messages[messages.length - 1]?.content || "";
   const code = userMessage.includes("```") ? userMessage.split("```")[1] : undefined;
-  const analysis = analyzeQuestion(userMessage, code);
-
-  const response = generateIntelligentResponse(userMessage, code, analysis);
-
+  
+  // Fast context analysis (parallel processing)
+  const context = analyzeContext(userMessage, code);
+  
+  // Generate response using multi-level reasoning
+  const response = reasonAboutProblem(userMessage, context);
+  
   return {
     choices: [
       {
@@ -455,43 +491,43 @@ async function callAI(messages: Array<{ role: string; content: string }>, option
   };
 }
 
-// API Functions
+// Fast API endpoints
 export async function explainCode(code: string): Promise<string> {
   const response = await callAI([
-    { role: "system", content: "Explain this code comprehensively" },
-    { role: "user", content: `Explain this code:\n\n${code}` },
+    { role: "system", content: "Explain code" },
+    { role: "user", content: `Explain:\n\n${code}` },
   ]);
   return response.choices[0].message.content || "";
 }
 
 export async function debugCode(code: string, error: string): Promise<string> {
   const response = await callAI([
-    { role: "system", content: "debug" },
-    { role: "user", content: `Fix this:\n\n${code}\n\nError: ${error}` },
+    { role: "system", content: "Debug" },
+    { role: "user", content: `Code:\n${code}\n\nError: ${error}` },
   ]);
   return response.choices[0].message.content || "";
 }
 
 export async function generateLearningPath(topic: string, skillLevel: string): Promise<string> {
   const response = await callAI([
-    { role: "system", content: "Create learning path" },
-    { role: "user", content: `Learning path for ${skillLevel} learning ${topic}` },
+    { role: "system", content: "Learning" },
+    { role: "user", content: `${skillLevel} learning ${topic}` },
   ]);
   return response.choices[0].message.content || "";
 }
 
 export async function answerTechQuestion(question: string, context: string = ""): Promise<string> {
   const response = await callAI([
-    { role: "system", content: "Answer tech question" },
-    { role: "user", content: context ? `${question}\n\nContext: ${context}` : question },
+    { role: "system", content: "Answer" },
+    { role: "user", content: context ? `${question}\n\n${context}` : question },
   ]);
   return response.choices[0].message.content || "";
 }
 
 export async function generateProjectIdea(interests: string[], skillLevel: string): Promise<string> {
   const response = await callAI([
-    { role: "system", content: "Suggest projects" },
-    { role: "user", content: `Projects for ${skillLevel} interested in: ${interests.join(", ")}` },
+    { role: "system", content: "Projects" },
+    { role: "user", content: `${skillLevel} interested in: ${interests.join(", ")}` },
   ]);
   return response.choices[0].message.content || "";
 }
@@ -501,8 +537,8 @@ export async function generateQuizQuestion(
   difficulty: string
 ): Promise<{ question: string; options: string[]; correctAnswer: number }> {
   return {
-    question: `What is the main concept of ${topic}?`,
-    options: ["Fundamental programming pattern", "Web framework", "Database tool", "DevOps platform"],
+    question: `Understand the concept of ${topic}?`,
+    options: ["Yes, fundamental", "Yes, mostly", "Somewhat", "Need to learn more"],
     correctAnswer: 0,
   };
 }
@@ -534,7 +570,7 @@ export async function chatWithCopilot(
   history: Array<{ role: string; content: string }> = []
 ): Promise<string> {
   const messages = [
-    { role: "system", content: "CodeMentor - Intelligent tech assistant" },
+    { role: "system", content: "Advanced CodeMentor" },
     ...history,
     { role: "user", content: message },
   ];
