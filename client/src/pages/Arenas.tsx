@@ -139,16 +139,39 @@ function ChallengeRow({ challenge }: { challenge: Challenge }) {
 }
 
 export default function Arenas() {
-  const { data: arenas, isLoading: arenasLoading } = useQuery<Arena[]>({
+  const { data: arenas, isLoading: arenasLoading, isError: arenasError, error: arenasErrorMsg } = useQuery<Arena[]>({
     queryKey: ["/api/arenas"],
   });
 
-  const { data: challenges, isLoading: challengesLoading } = useQuery<Challenge[]>({
+  const { data: challenges, isLoading: challengesLoading, isError: challengesError } = useQuery<Challenge[]>({
     queryKey: ["/api/challenges"],
   });
 
   const dailyChallenges = challenges?.filter((c) => c.isDaily) || [];
   const weeklyChallenges = challenges?.filter((c) => c.isWeekly) || [];
+
+  if (arenasError) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] p-6">
+        <Card className="w-full max-w-md border-destructive">
+          <CardHeader>
+            <CardTitle className="text-destructive">Failed to load arenas</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {arenasErrorMsg instanceof Error ? arenasErrorMsg.message : "Unable to load skill arenas"}
+            </p>
+            <Button 
+              onClick={() => window.location.reload()} 
+              className="w-full"
+            >
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (arenasLoading) {
     return (
