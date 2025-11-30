@@ -901,5 +901,147 @@ export async function registerRoutes(
     }
   });
 
+  // ===== AI VS YOU CHALLENGES =====
+
+  // Generate AI challenge
+  app.post("/api/ai-challenges/generate", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { topic, difficulty } = req.body;
+      const { generateAIChallenge } = await import("./aiChallenges");
+      const challenge = await generateAIChallenge(topic || "Algorithm", difficulty || "medium");
+      res.json(challenge);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Submit AI challenge
+  app.post("/api/ai-challenges/:id/submit", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { userCode, testCases } = req.body;
+      const { judgeAIChallenge } = await import("./aiChallenges");
+      
+      const judgment = await judgeAIChallenge(userCode, "// AI solution", testCases || []);
+      const profile = await storage.getUserProfile(req.user.id);
+      
+      if (judgment.verdict === "user_wins") {
+        await storage.addXp(req.user.id, 200);
+      }
+      
+      res.json({
+        ...judgment,
+        userXPGained: judgment.verdict === "user_wins" ? 200 : judgment.verdict === "tie" ? 100 : 50,
+        newXP: (profile?.xp || 0) + (judgment.verdict === "user_wins" ? 200 : judgment.verdict === "tie" ? 100 : 50),
+      });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get AI challenge leaderboard
+  app.get("/api/ai-challenges/leaderboard", async (req, res) => {
+    try {
+      const { getAIChallengeLeaderboard } = await import("./aiChallenges");
+      const leaderboard = await getAIChallengeLeaderboard();
+      res.json(leaderboard);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // ===== SHADOW COLLABORATION =====
+
+  // Create shadow session
+  app.post("/api/shadow/session", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { projectId, teamSize } = req.body;
+      const { createShadowSession } = await import("./shadowCollaboration");
+      const session = await createShadowSession(req.user.id, projectId || "proj_new", teamSize || 3);
+      res.json(session);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get shadow teammate contributions
+  app.get("/api/shadow/session/:sessionId/contributions", async (req, res) => {
+    try {
+      const { getShadowTeammateContributions } = await import("./shadowCollaboration");
+      const contributions = await getShadowTeammateContributions(req.params.sessionId);
+      res.json(contributions);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Reveal shadow teammate
+  app.post("/api/shadow/session/:sessionId/reveal/:teammateId", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { revealShadowTeammate } = await import("./shadowCollaboration");
+      const revealed = await revealShadowTeammate(req.params.sessionId, req.params.teammateId);
+      
+      if (revealed.teammate) {
+        await storage.addXp(req.user.id, revealed.surpriseBonus.xpBonus);
+      }
+      
+      res.json(revealed);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get shadow session stats
+  app.get("/api/shadow/session/:sessionId/stats", async (req, res) => {
+    try {
+      const { getShadowSessionStats } = await import("./shadowCollaboration");
+      const stats = await getShadowSessionStats(req.params.sessionId);
+      res.json(stats);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Speed round with shadow team
+  app.post("/api/shadow/speed-round", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { sessionId, minutesLimit } = req.body;
+      const { shadowSpeedRound } = await import("./shadowCollaboration");
+      const speedRound = await shadowSpeedRound(sessionId || `session_${Date.now()}`, minutesLimit || 15);
+      res.json(speedRound);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Speed multiplier tracking
+  app.post("/api/shadow/speed-round/:sessionId/complete", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { timeSpent, objectives } = req.body;
+      const objectivesCompleted = objectives?.filter((o: any) => o.completed).length || 0;
+      const completionRate = objectives ? (objectivesCompleted / objectives.length) * 100 : 100;
+      const speedBonus = completionRate > 90 ? 300 : completionRate > 75 ? 200 : 100;
+      
+      await storage.addXp(req.user.id, speedBonus);
+      
+      res.json({
+        sessionId: req.params.sessionId,
+        completed: true,
+        timeSpent,
+        objectivesCompleted,
+        completionRate,
+        xpEarned: speedBonus,
+        achievement: completionRate === 100 ? "Perfect Speed Run" : "Speed Mastery",
+      });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }
