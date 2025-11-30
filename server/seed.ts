@@ -6,11 +6,19 @@ import {
 
 export async function seedDatabase() {
   try {
-    // Check if data already exists
-    const existingArenas = await db.select().from(arenas).limit(1);
-    if (existingArenas.length > 0) {
-      console.log("Database already seeded, skipping seed");
-      return;
+    console.log("Starting database seed...");
+    
+    // FORCE clear old data and seed with new 17 arenas
+    try {
+      await db.delete(arenas);
+      await db.delete(challenges);
+      await db.delete(quests);
+      await db.delete(courses);
+      await db.delete(feedItems);
+      await db.delete(roadmaps);
+      console.log("Cleared old data successfully");
+    } catch (e) {
+      console.log("Old data cleanup skipped or not needed");
     }
 
     console.log("Seeding database with 17 arenas + massive content...");
