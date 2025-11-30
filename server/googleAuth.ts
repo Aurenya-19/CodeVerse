@@ -55,6 +55,11 @@ export async function setupAuth(app: Express) {
 
   console.log(`[Auth] Google OAuth configured with callback URL: ${callbackURL}`);
 
+  // Ensure we have credentials
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    console.error('[Auth] Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET environment variables');
+  }
+
   // Google OAuth Strategy
   passport.use(
     new GoogleStrategy(
@@ -63,7 +68,7 @@ export async function setupAuth(app: Express) {
         clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
         callbackURL,
       },
-      async (accessToken, refreshToken, profile, done) => {
+      async (accessToken: string, refreshToken: string, profile: any, done: any) => {
         try {
           await upsertUser(profile);
           return done(null, {
