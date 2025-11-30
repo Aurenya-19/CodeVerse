@@ -9,6 +9,8 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { I18nextProvider } from "react-i18next";
+import i18n from "@/config/i18n";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import Onboarding from "@/pages/Onboarding";
@@ -43,9 +45,11 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
       <div className="flex h-screen w-full">
         <AppSidebar />
         <div className="flex flex-1 flex-col overflow-hidden">
-          <header className="flex h-14 items-center justify-between border-b border-border px-4">
+          <header className="flex h-14 items-center justify-between border-b border-border px-4 gap-2">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+            </div>
           </header>
           <main className="flex-1 overflow-auto">
             {children}
@@ -161,14 +165,16 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark">
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <I18nextProvider i18n={i18n}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider defaultTheme="dark">
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </I18nextProvider>
   );
 }
 

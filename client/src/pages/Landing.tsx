@@ -13,8 +13,11 @@ import {
   Zap,
   ChevronRight,
   Star,
+  Globe,
 } from "lucide-react";
 import techHiveLogo from "@assets/ChatGPT Image Nov 30, 2025, 03_04_43 PM_1764495927682.png";
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 const features = [
   {
@@ -63,6 +66,8 @@ const stats = [
 ];
 
 export default function Landing() {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen bg-background">
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
@@ -72,15 +77,16 @@ export default function Landing() {
             <span className="font-display text-xl font-bold">TechHive</span>
           </div>
           <div className="flex items-center gap-4">
+            <LanguageSwitcher />
             <a
               href="/api/login"
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
               data-testid="link-login"
             >
-              Log in
+              {t("common.login")}
             </a>
             <Button asChild data-testid="button-get-started">
-              <a href="/api/login">Get Started</a>
+              <a href="/api/login">{t("common.getStarted")}</a>
             </Button>
           </div>
         </div>
@@ -95,30 +101,29 @@ export default function Landing() {
           <div className="relative mx-auto max-w-7xl px-4 text-center">
             <Badge variant="secondary" className="mb-6">
               <Sparkles className="mr-1 h-3 w-3" />
-              Powered by AI
+              {t("landing.poweredByAi")}
             </Badge>
             
             <h1 className="font-display text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
-              Level Up Your
+              {t("landing.heroTitle")}
               <span className="bg-gradient-to-r from-primary via-chart-2 to-chart-3 bg-clip-text text-transparent">
-                {" "}Tech Skills
+                {" "}
               </span>
             </h1>
             
             <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-              Join the ultimate gamified learning platform. Master AI, Web Dev, Cybersecurity, and more 
-              through challenges, competitions, and collaboration with a global community.
+              {t("landing.heroDescription")}
             </p>
             
             <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
               <Button size="lg" asChild className="h-12 px-8" data-testid="button-start-journey">
                 <a href="/api/login">
-                  Start Your Journey
+                  {t("landing.startJourney")}
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </a>
               </Button>
               <Button size="lg" variant="outline" className="h-12 px-8" data-testid="button-explore">
-                <a href="#features">Explore Features</a>
+                <a href="#features">{t("landing.exploreFeatures")}</a>
               </Button>
             </div>
 

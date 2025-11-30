@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 import {
   Flame,
   Target,
@@ -210,6 +211,7 @@ function ArenaCard({ arena }: { arena: Arena }) {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   
   const { data, isLoading } = useQuery<DashboardData>({
     queryKey: ["/api/dashboard"],
@@ -240,15 +242,15 @@ export default function Dashboard() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-3xl font-bold">
-            Welcome back, {user?.firstName || "Developer"}!
+            {t("dashboard.welcomeBack")}, {user?.firstName || "Developer"}!
           </h1>
           <p className="mt-1 text-muted-foreground">
-            Ready to level up your skills today?
+            {t("dashboard.readyToLevel")}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <p className="text-sm text-muted-foreground">Your Level</p>
+            <p className="text-sm text-muted-foreground">{t("dashboard.yourLevel")}</p>
             <p className="font-display text-2xl font-bold text-primary">
               {profile?.level || 1}
             </p>
@@ -270,28 +272,28 @@ export default function Dashboard() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={Flame}
-          label="Day Streak"
+          label={t("dashboard.dayStreak")}
           value={stats.streak}
           trend="+2 this week"
           color="text-chart-3"
         />
         <StatCard
           icon={Swords}
-          label="Challenges Done"
+          label={t("dashboard.challengesDone")}
           value={stats.challengesCompleted}
           trend="+5 today"
           color="text-chart-1"
         />
         <StatCard
           icon={Zap}
-          label="Total XP"
+          label={t("dashboard.totalXp")}
           value={stats.totalXp.toLocaleString()}
           trend="+250 today"
           color="text-chart-4"
         />
         <StatCard
           icon={Trophy}
-          label="Global Rank"
+          label={t("dashboard.globalRank")}
           value={`#${stats.rank || "—"}`}
           trend="Top 5%"
           color="text-chart-2"
@@ -303,8 +305,8 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div>
-                <CardTitle className="font-display">Daily Quests</CardTitle>
-                <CardDescription>Complete quests to earn XP and rewards</CardDescription>
+                <CardTitle className="font-display">{t("dashboard.dailyQuests")}</CardTitle>
+                <CardDescription>{t("dashboard.completeQuests")}</CardDescription>
               </div>
               <Button variant="ghost" size="sm" asChild>
                 <Link href="/quests">
@@ -339,8 +341,8 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div>
-                <CardTitle className="font-display">Today's Challenges</CardTitle>
-                <CardDescription>Fresh challenges updated daily</CardDescription>
+                <CardTitle className="font-display">{t("dashboard.todaysChallenges")}</CardTitle>
+                <CardDescription>{t("dashboard.freshChallenges")}</CardDescription>
               </div>
               <Button variant="ghost" size="sm" asChild>
                 <Link href="/arenas">
@@ -370,7 +372,7 @@ export default function Dashboard() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="font-display">Your Progress</CardTitle>
+              <CardTitle className="font-display">{t("dashboard.yourProgress")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center text-center">
@@ -400,11 +402,11 @@ export default function Dashboard() {
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <span className="font-display text-3xl font-bold">{profile?.level || 1}</span>
-                    <span className="text-xs text-muted-foreground">Level</span>
+                    <span className="text-xs text-muted-foreground">{t("dashboard.level")}</span>
                   </div>
                 </div>
                 <p className="mt-4 text-sm text-muted-foreground">
-                  {1000 - ((profile?.xp || 0) % 1000)} XP to Level {(profile?.level || 1) + 1}
+                  {1000 - ((profile?.xp || 0) % 1000)} {t("dashboard.xpToNextLevel")} {(profile?.level || 1) + 1}
                 </p>
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
                   {profile?.badges?.slice(0, 4).map((badge, i) => (
