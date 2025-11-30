@@ -8,6 +8,14 @@ TechHive is a gamified learning platform that transforms tech education into an 
 
 Preferred communication style: Simple, everyday language.
 
+## Critical Authentication Configuration
+
+**IMPORTANT:** Replit Auth (OIDC) only works on Replit-deployed apps. For external deployments (Render), you need to either:
+1. Deploy on Replit directly using Replit's built-in deployment feature
+2. Switch to Google OAuth or GitHub OAuth for external domains
+
+Current auth uses: `openid-client` with Replit OIDC provider at `https://replit.com/oidc`
+
 ## System Architecture
 
 ### Frontend Architecture
@@ -55,12 +63,14 @@ Preferred communication style: Simple, everyday language.
 - Schema-first design with Zod validation
 - Relations defined between entities (users, profiles, arenas, challenges, projects, clans, etc.)
 - Migration system via drizzle-kit
+- Connection pooling optimized for 1000+ concurrent users (20 max connections)
 
 **Authentication:**
 - Replit Auth integration using OpenID Connect
 - Passport.js strategy for OAuth flow
 - Session management with PostgreSQL-backed session store (connect-pg-simple)
 - Secure cookie-based sessions with 1-week TTL
+- **Note:** Works on Replit deployments only; external deployments need alternative OAuth providers
 
 **Data Models:**
 - Users: Core authentication and profile data
@@ -77,6 +87,15 @@ Preferred communication style: Simple, everyday language.
 - FeedItems: Tech news and content aggregation
 - AiChats: Conversation history with AI copilot
 
+### Performance Optimizations (1000+ Users)
+
+- **Server-side caching layer** for expensive queries (arenas, quests, challenges) with 5-minute TTL
+- **Database connection pooling** optimized to 20 max connections with idle timeout management
+- **HTTP cache headers** for browser-side caching (5-minute cache-control)
+- **Pagination utilities** with max 100 items per page to reduce memory usage
+- **Memoization** for frequently accessed data
+- **Connection pool monitoring** for error tracking under load
+
 ### External Dependencies
 
 **Database:**
@@ -86,6 +105,7 @@ Preferred communication style: Simple, everyday language.
 **Authentication:**
 - Replit Auth OIDC provider for user authentication
 - OpenID Client library for OAuth integration
+- Passport.js for strategy management
 
 **UI Component Libraries:**
 - Radix UI for 20+ accessible component primitives
@@ -105,9 +125,10 @@ Preferred communication style: Simple, everyday language.
 - date-fns for date manipulation
 - nanoid for unique ID generation
 - clsx and tailwind-merge for conditional class names
+- Memoizee for memory-efficient caching
 
 **Future Integration Points:**
-- AI services (Google Generative AI, OpenAI) for copilot features
+- Alternative OAuth providers (Google, GitHub) for external deployments
 - Stripe for potential premium features
 - Email services (Nodemailer) for notifications
 - WebSocket (ws) for real-time features like live challenges and chat
@@ -125,8 +146,21 @@ Preferred communication style: Simple, everyday language.
 - Selective bundling of dependencies to reduce cold start times
 - Static file serving from Express for SPA fallback
 
+**Deployment Options:**
+1. **Replit Deployment** (Recommended for Replit Auth)
+   - Built-in deployment feature handles everything
+   - Replit Auth works seamlessly
+   - No external configuration needed
+
+2. **Render.com Deployment** (External)
+   - Requires switching to Google/GitHub OAuth
+   - Uses environment variables for configuration
+   - Manual webhook setup or git push to redeploy
+
 **Environment Requirements:**
 - DATABASE_URL: PostgreSQL connection string (Neon)
 - SESSION_SECRET: Secure session encryption key
 - ISSUER_URL: Replit OIDC endpoint (defaults to replit.com/oidc)
-- REPL_ID: Replit environment identifier
+- REPL_ID: Replit environment identifier (auto-set by Replit)
+- PORT: Listening port (auto-set by Replit, defaults to 5000)
+- PUBLIC_URL: For external deployments (e.g., https://techhive.onrender.com)
