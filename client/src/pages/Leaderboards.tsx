@@ -136,6 +136,7 @@ const periods = [
 
 const arenas = [
   { value: "global", label: "Global Rankings" },
+  // Mainstream Tech
   { value: "ai", label: "AI & Machine Learning" },
   { value: "web", label: "Web Development" },
   { value: "mobile", label: "Mobile Development" },
@@ -143,7 +144,20 @@ const arenas = [
   { value: "blockchain", label: "Blockchain & Web3" },
   { value: "devops", label: "DevOps & Cloud" },
   { value: "gamedev", label: "Game Development" },
-  { value: "biotech", label: "Biotech & Bioinformatics" },
+  // Niche/Rare Tech (Few People Specialize)
+  { value: "quantum", label: "🔬 Quantum Computing" },
+  { value: "fpga", label: "⚡ FPGA & Hardware Design" },
+  { value: "biotech", label: "🧬 Biotech & Bioinformatics" },
+  { value: "vrar", label: "🥽 AR/VR Development" },
+  { value: "robotics", label: "🤖 Robotics & Automation" },
+  { value: "iot", label: "📡 IoT & Embedded Systems" },
+  { value: "distributed", label: "🔗 Distributed Systems" },
+  { value: "lowlevel", label: "⚙️ Low-Level Systems Programming" },
+  { value: "wasm", label: "⚡ WebAssembly & Rust" },
+  { value: "formalverif", label: "✓ Formal Verification" },
+  { value: "compiler", label: "🔧 Compiler Design" },
+  { value: "hpc", label: "⚛️ High-Performance Computing" },
+  { value: "hardware", label: "🛰️ Hardware Hacking" },
 ];
 
 export default function Leaderboards() {

@@ -333,6 +333,16 @@ export async function registerRoutes(
     res.json(feed);
   });
 
+  // Tech Resources - Niche Technologies
+  app.get("/api/tech-resources", async (req, res) => {
+    try {
+      const { getTechResources } = await import("./resources");
+      res.json(await getTechResources());
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   // Roadmaps
   app.get("/api/roadmaps", async (req, res) => {
     const roadmaps = await storage.getRoadmaps();
