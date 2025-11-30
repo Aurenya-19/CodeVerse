@@ -50,17 +50,15 @@ export async function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Always use the PUBLIC_URL for production deployments
-  // In production/Render, PUBLIC_URL is the domain without https://
-  let callbackURL = process.env.GOOGLE_CALLBACK_URL;
+  // Determine callback URL based on environment
+  let callbackURL: string;
   
-  if (!callbackURL) {
-    if (process.env.PUBLIC_URL) {
-      callbackURL = `https://${process.env.PUBLIC_URL}/api/callback`;
-    } else {
-      // Fallback for local development - but won't work with Google OAuth
-      callbackURL = `https://localhost:5000/api/callback`;
-    }
+  if (process.env.NODE_ENV === 'production') {
+    // In production, use the explicitly configured URL
+    callbackURL = process.env.GOOGLE_CALLBACK_URL || `https://${process.env.PUBLIC_URL}/api/callback`;
+  } else {
+    // In development, use localhost for Google OAuth to work locally
+    callbackURL = `https://localhost:5000/api/callback`;
   }
 
   console.log(`[Auth] Google OAuth configured with callback URL: ${callbackURL}`);
