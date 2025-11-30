@@ -21,7 +21,7 @@ interface Repository {
 export default function GitHub() {
   const [searchQuery, setSearchQuery] = useState("");
   
-  const { data: apiData, isLoading } = useQuery({
+  const { data: apiData, isLoading } = useQuery<{ trending: Repository[] }>({
     queryKey: ["/api/trending/github"],
   });
 
