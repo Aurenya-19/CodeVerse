@@ -11,7 +11,6 @@ async function callAI(messages: Array<{ role: string; content: string }>, option
       ...options,
     });
   } catch (error: any) {
-    // If GPT-4 not available, fall back to GPT-3.5-turbo
     if (error?.error?.code === "model_not_found" || error?.message?.includes("does not exist")) {
       return await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
@@ -72,7 +71,7 @@ export async function answerTechQuestion(question: string, context: string = "")
   const response = await callAI([
     {
       role: "system",
-      content: "You are a helpful tech tutor on TechHive. Provide clear, practical answers with examples when helpful.",
+      content: "You are a helpful tech tutor on CodeVerse. Provide clear, practical answers with examples when helpful.",
     },
     {
       role: "user",
@@ -99,19 +98,16 @@ export async function generateProjectIdea(interests: string[], skillLevel: strin
 }
 
 export async function generateQuizQuestion(topic: string, difficulty: string): Promise<{ question: string; options: string[]; correctAnswer: number }> {
-  const response = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo",
-    messages: [
-      {
-        role: "system",
-        content: 'You are a tech quiz expert. Generate multiple choice questions in JSON format: {"question": "text", "options": ["a", "b", "c", "d"], "correctAnswer": 0}',
-      },
-      {
-        role: "user",
-        content: `Generate a ${difficulty} difficulty quiz question about ${topic}. Return only valid JSON.`,
-      },
-    ],
-  });
+  const response = await callAI([
+    {
+      role: "system",
+      content: 'You are a tech quiz expert. Generate multiple choice questions in JSON format: {"question": "text", "options": ["a", "b", "c", "d"], "correctAnswer": 0}',
+    },
+    {
+      role: "user",
+      content: `Generate a ${difficulty} difficulty quiz question about ${topic}. Return only valid JSON.`,
+    },
+  ], { response_format: { type: "json_object" } });
 
   try {
     return JSON.parse(response.choices[0].message.content || "{}");
@@ -128,21 +124,18 @@ export async function generateCourseLessons(courseTitle: string, courseDescripti
   try {
     const response = await Promise.race([
       callAI([
-        max_tokens: 1500,
-        messages: [
-          {
-            role: "system",
-            content: "You are a course designer. Generate lesson titles and descriptions as a simple text list. Format: Lesson Title|Short description",
-          },
-          {
-            role: "user",
-            content: `Create ${numLessons} lessons for "${courseTitle}". 
+        {
+          role: "system",
+          content: "You are a course designer. Generate lesson titles and descriptions as a simple text list. Format: Lesson Title|Short description",
+        },
+        {
+          role: "user",
+          content: `Create ${numLessons} lessons for "${courseTitle}". 
 ${courseDescription ? `Course overview: ${courseDescription}` : ""}
 Format each lesson as: Lesson Title|What students will learn
 One lesson per line.`,
-          },
-        ],
-      }),
+        },
+      ], { max_tokens: 1500 }),
       new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 15000)),
     ]);
 
@@ -172,21 +165,18 @@ export async function generateRoadmapMilestones(roadmapName: string, roadmapDesc
   try {
     const response = await Promise.race([
       callAI([
-        max_tokens: 1200,
-        messages: [
-          {
-            role: "system",
-            content: "You are a roadmap designer. Generate milestone titles and descriptions as a simple text list. Format: Milestone Title|Short description",
-          },
-          {
-            role: "user",
-            content: `Create ${numMilestones} learning milestones for the "${roadmapName}" roadmap.
+        {
+          role: "system",
+          content: "You are a roadmap designer. Generate milestone titles and descriptions as a simple text list. Format: Milestone Title|Short description",
+        },
+        {
+          role: "user",
+          content: `Create ${numMilestones} learning milestones for the "${roadmapName}" roadmap.
 ${roadmapDescription ? `Overview: ${roadmapDescription}` : ""}
 Format each milestone as: Milestone Title|What you'll accomplish
 One milestone per line. Make them progressively harder.`,
-          },
-        ],
-      }),
+        },
+      ], { max_tokens: 1200 }),
       new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 15000)),
     ]);
 
@@ -218,10 +208,7 @@ export async function chatWithCopilot(message: string, history: Array<{ role: st
       role: "system",
       content: "You are CodeMentor, a friendly tech learning assistant. Help users learn programming, debug code, and grow their skills. Be encouraging and practical.",
     },
-    ...history.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    })),
+    ...history,
     {
       role: "user",
       content: message,
