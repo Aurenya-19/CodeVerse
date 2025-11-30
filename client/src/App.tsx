@@ -41,6 +41,7 @@ import Resources from "@/pages/Resources";
 import ResourceDetail from "@/pages/ResourceDetail";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
+import Metaverse from "@/pages/Metaverse";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const style = {
@@ -185,6 +186,9 @@ function Router() {
       </Route>
       <Route path="/resources/:resourceId">
         <ProtectedRoute component={ResourceDetail} />
+      </Route>
+      <Route path="/metaverse">
+        <ProtectedRoute component={Metaverse} />
       </Route>
       <Route component={NotFound} />
     </Switch>

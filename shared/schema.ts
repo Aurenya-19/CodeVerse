@@ -413,6 +413,25 @@ export const TECH_INTERESTS = [
   "DevOps",
 ] as const;
 
+// Avatar customization for metaverse
+export const userAvatars = pgTable("user_avatars", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  skinTone: varchar("skin_tone").default("default"),
+  hairStyle: varchar("hair_style").default("default"),
+  outfit: varchar("outfit").default("default"),
+  aura: varchar("aura").default("none"),
+  level: integer("level").default(1),
+  xp: integer("xp").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type UserAvatar = typeof userAvatars.$inferSelect;
+
+const insertAvatarSchema = createInsertSchema(userAvatars).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertAvatar = z.infer<typeof insertAvatarSchema>;
+
 export const TECH_TIERS = ["Beginner", "Explorer", "Builder", "Expert", "Master", "Legend"] as const;
 
 export const LEARNING_PACES = ["slow", "moderate", "fast", "intensive"] as const;

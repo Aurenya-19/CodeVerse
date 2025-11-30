@@ -1281,5 +1281,52 @@ export async function registerRoutes(
     }
   });
 
+  // Metaverse Avatar Routes
+  app.get("/api/avatar", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const avatar = await storage.getUserAvatar(req.user.id);
+      res.json(avatar || { message: "No avatar created yet" });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/avatar/create", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const avatar = await storage.createAvatar({
+        userId: req.user.id,
+        skinTone: req.body.skinTone || "default",
+        hairStyle: req.body.hairStyle || "default",
+        outfit: req.body.outfit || "default",
+        aura: req.body.aura || "none",
+      });
+      res.json(avatar);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/avatar", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const avatar = await storage.updateAvatar(req.user.id, req.body);
+      res.json(avatar);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Metaverse Leaderboard
+  app.get("/api/metaverse/leaderboard", async (req, res) => {
+    try {
+      const leaderboard = await storage.getMetaverseLeaderboard();
+      res.json(leaderboard);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }
