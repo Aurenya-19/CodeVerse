@@ -61,14 +61,16 @@ export default function Metaverse() {
   const handleCreateAvatar = async () => {
     if (!avatarData) return;
     try {
-      const response = (await apiRequest("POST", "/api/avatar/create", avatarData)) as UserAvatar;
-      setAvatarData(response);
-      refetchAvatar();
-      toast({
-        title: "Avatar Created!",
-        description: "Your metaverse avatar is ready.",
-      });
-      setCustomizing(false);
+      const response = await apiRequest("POST", "/api/avatar/create", avatarData);
+      if (response && typeof response === "object") {
+        setAvatarData(response as unknown as UserAvatar);
+        refetchAvatar();
+        toast({
+          title: "Avatar Created!",
+          description: "Your metaverse avatar is ready.",
+        });
+        setCustomizing(false);
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -81,14 +83,16 @@ export default function Metaverse() {
   const handleUpdateAvatar = async () => {
     if (!avatarData) return;
     try {
-      const response = (await apiRequest("PATCH", "/api/avatar", avatarData)) as UserAvatar;
-      setAvatarData(response);
-      refetchAvatar();
-      toast({
-        title: "Avatar Updated!",
-        description: "Your metaverse avatar has been customized.",
-      });
-      setCustomizing(false);
+      const response = await apiRequest("PATCH", "/api/avatar", avatarData);
+      if (response && typeof response === "object") {
+        setAvatarData(response as unknown as UserAvatar);
+        refetchAvatar();
+        toast({
+          title: "Avatar Updated!",
+          description: "Your metaverse avatar has been customized.",
+        });
+        setCustomizing(false);
+      }
     } catch (error) {
       toast({
         title: "Error",

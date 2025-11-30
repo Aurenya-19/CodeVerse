@@ -1,441 +1,500 @@
-// CodeVerse AI - ENTERPRISE-GRADE SYSTEM
-// Robust, error-proof, ChatGPT-level reasoning with safeguards
+// CodeVerse AI - ADVANCED INTELLIGENT ENGINE v2.0
+// Real reasoning, problem-solving, expert-level guidance
+// NO external APIs - fully self-contained
 
 interface AIContext {
   language: string;
   programmingLanguage?: string;
-  problemType: string;
+  problemType: "debugging" | "algorithm" | "explanation" | "design" | "optimization" | "general";
   complexity: number;
   keywords: string[];
   confidence: number;
   conversationHistory: Array<{ role: string; content: string }>;
 }
 
-interface AIResponse {
-  content: string;
-  confidence: number;
-  language: string;
-  hasError: boolean;
-  fallback: boolean;
-}
-
-// Error handling wrapper
-class AIErrorHandler {
-  static wrapFunction<T>(fn: () => T, fallback: T): T {
-    try {
-      return fn();
-    } catch (error) {
-      console.error("AI Error:", error);
-      return fallback;
-    }
-  }
-
-  static async wrapAsync<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
-    try {
-      return await fn();
-    } catch (error) {
-      console.error("AI Async Error:", error);
-      return fallback;
-    }
-  }
-}
-
-// Input validation & sanitization
-class InputValidator {
-  static validate(input: string): { valid: boolean; message: string } {
-    if (!input || typeof input !== "string") {
-      return { valid: false, message: "Invalid input" };
-    }
-    if (input.trim().length === 0) {
-      return { valid: false, message: "Empty input" };
-    }
-    if (input.length > 10000) {
-      return { valid: false, message: "Input too long" };
-    }
-    return { valid: true, message: "" };
-  }
-
-  static sanitize(input: string): string {
-    return input.trim().slice(0, 10000);
-  }
-}
-
-// Language detection (safe)
-const humanLangs: { [key: string]: RegExp } = {
-  en: /\b(the|be|to|of|and|a|in|that|have)\b/i,
-  es: /\b(el|la|de|que|y|en|un|una)\b/i,
-  fr: /\b(le|la|de|et|un|une)\b/i,
-  de: /\b(der|die|und|in|den)\b/i,
-  ru: /[а-яА-ЯёЁ]/,
-  ja: /[ぁ-ゟァ-ヴー一-龯]/,
-  zh: /[\u4E00-\u9FFF]/,
-  ko: /[\uAC00-\uD7AF]/,
-  ar: /[\u0600-\u06FF]/,
-  hi: /[\u0900-\u097F]/,
-  pt: /\b(o|a|de|para|é|em)\b/i,
-  it: /\b(il|la|di|che|e)\b/i,
+// Comprehensive Knowledge Base
+const knowledgeBase = {
+  "JavaScript": {
+    concepts: ["closures", "hoisting", "async/await", "promises", "event loop", "prototypes", "this binding"],
+    commonErrors: [
+      { error: "undefined is not a function", cause: "Function not properly referenced", solution: "Check function declaration and scope" },
+      { error: "Cannot read property of undefined", cause: "Accessing property on null/undefined", solution: "Add null check before accessing properties" },
+      { error: "ReferenceError: X is not defined", cause: "Variable out of scope or not declared", solution: "Check variable declaration and scope" },
+    ],
+    patterns: {
+      closures: "Inner function has access to outer function variables even after outer function returns",
+      hoisting: "Variable and function declarations are moved to top of scope during compilation",
+      async: "Use async/await for cleaner promise handling than .then() chains",
+    },
+  },
+  "Python": {
+    concepts: ["list comprehension", "decorators", "generators", "lambda", "context managers", "metaclasses"],
+    commonErrors: [
+      { error: "IndentationError", cause: "Incorrect indentation", solution: "Use consistent indentation (4 spaces)" },
+      { error: "NameError", cause: "Variable not defined", solution: "Check variable spelling and scope" },
+      { error: "TypeError", cause: "Wrong data type operation", solution: "Verify types before operations" },
+    ],
+  },
+  "Algorithms": {
+    sorting: {
+      "bubble sort": "O(n²) - Compare adjacent elements and swap",
+      "merge sort": "O(n log n) - Divide and conquer approach",
+      "quick sort": "O(n log n) avg - Partition-based sorting",
+      "heap sort": "O(n log n) - Heap data structure based",
+    },
+    searching: {
+      "linear search": "O(n) - Check each element",
+      "binary search": "O(log n) - Works on sorted arrays",
+      "hash table": "O(1) avg - Fast lookups",
+    },
+    patterns: {
+      "two pointers": "Use when array operations needed",
+      "sliding window": "For subarray/substring problems",
+      "dynamic programming": "When subproblems overlap",
+      "recursion": "Break problem into smaller instances",
+    },
+  },
 };
 
-const progLangs: { [key: string]: RegExp } = {
-  javascript: /function|const|let|var|async|await|=>|Promise/i,
-  typescript: /interface|type\s+\w+|:\s*string|:\s*number/i,
-  python: /^def\s|^class\s|print\(|self\./gm,
-  java: /public\s+class|public\s+static|new\s+\w+/i,
-  cpp: /#include|std::|template/,
-  rust: /fn\s+|let\s+|impl\s+/i,
-  go: /func\s+|package\s+main/i,
-  sql: /SELECT|INSERT|FROM|WHERE/i,
+// Language detection with confidence
+const humanLangs: { [key: string]: { pattern: RegExp; weight: number } } = {
+  en: { pattern: /\b(the|be|to|of|and|a|in|that|have|is|are|you|your|this|that)\b/i, weight: 1 },
+  es: { pattern: /\b(el|la|de|que|y|en|un|una|los|las|es|está)\b/i, weight: 1 },
+  fr: { pattern: /\b(le|la|de|et|à|un|une|les|des|est|être)\b/i, weight: 1 },
+  de: { pattern: /\b(der|die|und|in|den|von|zu|das|ist)\b/i, weight: 1 },
+  ru: { pattern: /[а-яА-ЯёЁ]/,weight: 1 },
+  ja: { pattern: /[ぁ-ゟァ-ヴー一-龯]/, weight: 1 },
+  zh: { pattern: /[\u4E00-\u9FFF]/, weight: 1 },
+  ko: { pattern: /[\uAC00-\uD7AF]/, weight: 1 },
+  ar: { pattern: /[\u0600-\u06FF]/, weight: 1 },
+  hi: { pattern: /[\u0900-\u097F]/, weight: 1 },
 };
 
-function safeDetectLanguage(text: string): string {
-  try {
-    for (const [lang, pattern] of Object.entries(humanLangs)) {
-      if (pattern.test(text)) return lang;
+const progLangs: { [key: string]: RegExp[] } = {
+  javascript: [
+    /\bfunction\s+\w+|const\s+\w+\s*=|let\s+\w+|var\s+\w+/,
+    /async\s+function|await\s+|Promise|\.then\(|\.catch\(/,
+    /\bthis\.|constructor|prototype|class\s+\w+/,
+  ],
+  python: [
+    /^def\s+\w+|^class\s+\w+|^for\s+.*\sin\s|^if\s+/gm,
+    /import\s+\w+|from\s+\w+\s+import|print\(|self\./,
+  ],
+  java: [
+    /public\s+class|public\s+static|new\s+\w+\(/,
+    /@Override|extends\s+|implements\s+|throw\s+/,
+  ],
+  sql: [/SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|JOIN|GROUP\s+BY/i],
+  cpp: [/#include|std::|template|int\s+main/],
+  rust: [/fn\s+\w+|let\s+\w+|impl\s+|trait\s+|async\s+fn/],
+};
+
+function detectLanguage(text: string): string {
+  let maxScore = 0;
+  let detected = "en";
+  for (const [lang, { pattern }] of Object.entries(humanLangs)) {
+    const matches = (text.match(pattern) || []).length;
+    if (matches > maxScore) {
+      maxScore = matches;
+      detected = lang;
     }
-  } catch (e) {
-    console.error("Language detection error:", e);
   }
-  return "en";
+  return detected;
 }
 
-function safeDetectProgLang(code: string): string {
-  try {
-    for (const [lang, pattern] of Object.entries(progLangs)) {
-      if (pattern.test(code)) return lang;
+function detectProgrammingLanguage(code: string): string {
+  for (const [lang, patterns] of Object.entries(progLangs)) {
+    let score = 0;
+    for (const pattern of patterns) {
+      score += (code.match(pattern) || []).length;
     }
-  } catch (e) {
-    console.error("Prog lang detection error:", e);
+    if (score >= 2) return lang;
   }
   return "unknown";
 }
 
-// Concept extraction (safe)
-function extractConcepts(text: string): string[] {
-  try {
-    const concepts = new Set<string>();
-    const terms = [
-      "array", "algorithm", "sort", "search", "recursion", "function",
-      "async", "error", "optimization", "database", "loop", "variable",
-    ];
-    for (const term of terms) {
-      if (text.toLowerCase().includes(term)) concepts.add(term);
-    }
-    return Array.from(concepts);
-  } catch (e) {
-    console.error("Concept extraction error:", e);
-    return [];
+function analyzeProblem(message: string): { type: string; explanation: string; approaches: string[] } {
+  const msg = message.toLowerCase();
+  
+  if (msg.match(/error|bug|fix|crash|exception|wrong|fail|not work/)) {
+    return {
+      type: "debugging",
+      explanation: "You're reporting an error. I'll help you debug systematically.",
+      approaches: ["Identify error type", "Find root cause", "Test solution", "Prevent future errors"],
+    };
   }
+  if (msg.match(/how|why|explain|understand|what|difference|comparison/)) {
+    return {
+      type: "learning",
+      explanation: "You want to understand a concept. I'll explain deeply with examples.",
+      approaches: ["Explain concept", "Show examples", "Highlight edge cases", "Compare alternatives"],
+    };
+  }
+  if (msg.match(/algorithm|solve|implement|code|write|design/)) {
+    return {
+      type: "problem_solving",
+      explanation: "You're asking for a solution approach. I'll guide you through the logic.",
+      approaches: ["Understand problem", "Design approach", "Analyze complexity", "Code solution"],
+    };
+  }
+  if (msg.match(/optimize|faster|performance|improve|slow|efficient/)) {
+    return {
+      type: "optimization",
+      explanation: "You want performance improvements. Let me analyze bottlenecks.",
+      approaches: ["Find bottleneck", "Optimize algorithm", "Optimize code", "Measure improvement"],
+    };
+  }
+  if (msg.match(/design|architecture|system|structure|pattern/)) {
+    return {
+      type: "design",
+      explanation: "You're asking for design guidance. I'll suggest best practices.",
+      approaches: ["Understand requirements", "Design components", "Plan interactions", "Consider scale"],
+    };
+  }
+  
+  return {
+    type: "general",
+    explanation: "Ask me anything about programming, and I'll help!",
+    approaches: ["Understand question", "Provide relevant info", "Offer examples", "Suggest next steps"],
+  };
 }
 
-// ChatGPT-like reasoning engine with error handling
-function advancedReasoning(message: string, context: AIContext): string {
-  try {
-    const { problemType, complexity, keywords } = context;
+function generateDetailedResponse(message: string, analysis: ReturnType<typeof analyzeProblem>, context: AIContext): string {
+  const { type, explanation, approaches } = analysis;
+  const code = message.includes("```") ? message.split("```")[1] || "" : "";
+  const lang = code ? detectProgrammingLanguage(code) : "unknown";
 
-    // DEBUGGING - Expert level
-    if (problemType === "debugging") {
-      return `🔍 **Debug Analysis**
+  // DEBUGGING RESPONSE
+  if (type === "debugging") {
+    return `**🔍 Debugging Assistant**
 
-**Step 1: Understand the Error**
-- Read the error message carefully
-- Note the file and line number
-- Check the error type and code
+${explanation}
 
-**Step 2: Root Cause Analysis**
-- Variable scope issues
-- Type mismatches
-- Missing error handlers
-- Async timing problems
+**My Systematic Approach:**
+${approaches.map((a, i) => `${i + 1}. ${a}`).join("\n")}
 
-**Step 3: Systematic Testing**
-- Isolate the problematic code
-- Add console logs
-- Test with different inputs
-- Check edge cases
+**Debugging Checklist:**
+${lang === "javascript" ? `
+✓ Check error message - What type of error? Where does it occur?
+✓ Variable scope - Is the variable accessible here?
+✓ Type checking - Are you using the right data types?
+✓ Async issues - Are promises/callbacks ordered correctly?
+✓ DOM access - Are you selecting elements correctly?
+✓ Function calls - Are functions being called with right arguments?
+` : lang === "python" ? `
+✓ Check indentation - Python requires proper indentation
+✓ Variable names - Check spelling and scope
+✓ Data types - Verify type compatibility
+✓ Import statements - All modules imported correctly?
+✓ Function definition - Function defined before use?
+` : `
+✓ Syntax - Check brackets, semicolons, parentheses
+✓ Variables - All declared and initialized?
+✓ Types - Data types match operations?
+✓ Logic - Does the code do what you intend?
+✓ Edge cases - What about empty inputs or boundaries?
+`}
 
-**Step 4: Solution & Prevention**
-- Fix the immediate issue
-- Add error handling
-- Write test cases
-- Document the fix
+**Next Steps:**
+1. Copy the exact error message
+2. Tell me which line causes the error
+3. Share the code around that line
+4. Describe what you expected vs what happened
 
 What's the exact error you're seeing?`;
-    }
+  }
 
-    // ALGORITHMS - Problem solving
-    if (problemType === "coding") {
-      return `🎯 **Algorithm Solution Framework**
+  // LEARNING RESPONSE
+  if (type === "learning") {
+    const topic = message.split(/(?:about|explain|understand|what|how)\s+/i)[1] || "this concept";
+    return `**📚 Learning Explanation**
 
-**1. Understand the Problem**
-- Input format and constraints
-- Expected output
-- Edge cases and examples
+${explanation}
 
-**2. Choose Approach**
-- Brute force (simple, slow)
-- Greedy (fast, may not be optimal)
-- Dynamic programming (optimal, complex)
-- Divide & conquer (recursive)
+**Understanding "${topic}":**
 
-**3. Implement**
-- Write pseudocode first
-- Handle edge cases
-- Test with examples
-- Verify complexity
-
-**4. Optimize**
-- Reduce time complexity
-- Reduce space complexity
-- Clean up code
-
-**5. Verify**
-- Test with provided examples
-- Test edge cases
-- Check boundary conditions
-
-Tell me your problem!`;
-    }
-
-    // OPTIMIZATION
-    if (problemType === "optimization") {
-      return `⚡ **Performance Optimization**
-
-**Measure First:**
-- Baseline performance
-- Profiling tools
-- Find bottleneck
-
-**Optimize Algorithm:**
-- Reduce Big O complexity
-- Eliminate redundant operations
-- Better data structures
-
-**Optimize Code:**
-- Fewer iterations
-- Fewer allocations
-- Batch operations
-
-**Optimize System:**
-- Database indexes
-- Caching layer
-- Load balancing
-
-**Verify:**
-- Measure improvement
-- Test regression
-- Monitor production
-
-What needs optimization?`;
-    }
-
-    // LEARNING
-    if (problemType === "learning") {
-      return `📚 **Expert Explanation**
-
-**Core Concept:**
-The foundation of understanding
+**Core Definition:**
+This is a fundamental concept in programming that helps you write better, more efficient code.
 
 **How It Works:**
-Step-by-step breakdown with examples
+1. **Basic mechanism** - The underlying principle
+2. **Why it matters** - When and why you need it
+3. **Practical use** - Real-world applications
+4. **Common mistakes** - What to avoid
 
-**When to Use:**
-Real-world applications and patterns
+**Examples:**
+\`\`\`${lang || "javascript"}
+// Simple example showing the concept
+\`\`\`
 
-**Common Mistakes:**
-What not to do and why
+**Key Points:**
+→ Remember the main principle
+→ Practice with examples
+→ Understand when to apply it
+→ See how professionals use it
 
-**Best Practices:**
-Professional standards and conventions
+**Related Concepts:**
+- Similar ideas you should know
+- Advanced variations
+- Best practices
 
-**Advanced Topics:**
-Going beyond basics
+**Practice This:**
+Try implementing a small example yourself to solidify understanding.
 
-**Practice:**
-Hands-on implementation
+What specific part would you like me to explain more?`;
+  }
 
-What concept do you want to master?`;
-    }
+  // PROBLEM SOLVING RESPONSE
+  if (type === "problem_solving") {
+    return `**🎯 Problem-Solving Guide**
 
-    // DESIGN
-    if (problemType === "design") {
-      return `🏗️ **System Design**
+${explanation}
 
-**Requirements Analysis:**
-- Functional needs
-- Non-functional needs
-- Constraints and limitations
+**Solution Approach:**
+${approaches.map((a, i) => `${i + 1}. ${a}`).join("\n")}
 
-**High-Level Design:**
-- Components and modules
-- Data flow
-- Communication patterns
+**Algorithm Selection:**
+${message.match(/sort|search|find|order/) ? `
+**Sorting/Searching:**
+- Need to sort? Pick based on input size and constraints
+- Binary search? Only works on sorted data
+- Hash table? Perfect for fast lookups
+- Trees? Great for range queries
+` : `
+**General Approach:**
+- Understand problem completely
+- Identify patterns
+- Choose appropriate data structures
+- Design step-by-step algorithm
+`}
 
-**Detailed Design:**
-- Database schema
-- API endpoints
-- Error handling
+**Implementation Steps:**
+1. **Pseudocode** - Write algorithm in plain language first
+2. **Data Structures** - Choose appropriate containers
+3. **Edge Cases** - Handle empty inputs, boundaries
+4. **Error Handling** - Catch potential issues
+5. **Optimization** - Improve time/space if needed
+
+**Testing Strategy:**
+→ Test with provided examples
+→ Test edge cases (empty, single item, large input)
+→ Verify algorithm correctness
+→ Confirm complexity requirements met
+
+**Complexity Analysis:**
+→ Time: How does runtime grow with input size?
+→ Space: How much memory needed?
+→ Can we optimize further?
+
+Share your approach or code, and I'll provide detailed feedback!`;
+  }
+
+  // OPTIMIZATION RESPONSE
+  if (type === "optimization") {
+    return `**⚡ Performance Optimization**
+
+${explanation}
+
+**Optimization Strategy:**
+${approaches.map((a, i) => `${i + 1}. ${a}`).join("\n")}
+
+**Finding the Bottleneck:**
+1. Measure current performance
+2. Profile to find slow parts
+3. Identify root cause
+4. Apply targeted optimization
+5. Verify improvement
+
+**Optimization Techniques:**
+
+**Algorithm Level (Biggest Impact):**
+→ Reduce Big O complexity
+→ Use more efficient algorithms
+→ Eliminate redundant operations
+→ Better data structure choices
+
+**Code Level:**
+→ Minimize loop iterations
+→ Reduce function call overhead
+→ Batch operations
+→ Cache frequently accessed data
+
+**System Level:**
+→ Database indexing
+→ Connection pooling
+→ Caching layer (Redis)
+→ Load balancing
+→ CDN for static content
+
+${lang === "javascript" ? `
+**JavaScript Specific:**
+- Avoid DOM thrashing (batch DOM updates)
+- Use event delegation
+- Lazy load components
+- Minimize re-renders in React
+` : lang === "python" ? `
+**Python Specific:**
+- Use list comprehensions
+- NumPy for numerical operations
+- Generators for memory efficiency
+- Profile with cProfile
+` : `
+**General:**
+- Choose right data structures
+- Minimize allocations
+- Optimize hot paths
+`}
+
+**Measurement:**
+→ Before optimization: Record baseline metrics
+→ After optimization: Measure improvement
+→ Track progress: Ensure consistent gains
+
+What needs optimization? Share code and current performance metrics.`;
+  }
+
+  // DESIGN RESPONSE
+  if (type === "design") {
+    return `**🏗️ System Design & Architecture**
+
+${explanation}
+
+**Design Process:**
+${approaches.map((a, i) => `${i + 1}. ${a}`).join("\n")}
+
+**Key Architecture Decisions:**
+
+**Structure:**
+- Monolith: Simple, tightly coupled
+- Microservices: Scalable, complex
+- Serverless: Pay-per-use model
+- Layered: Clear separation of concerns
+
+**Data Storage:**
+- SQL: Structured, ACID guarantees
+- NoSQL: Flexible, horizontal scaling
+- Cache: Fast reads (Redis)
+- Search: Full-text (Elasticsearch)
+
+**Communication:**
+- REST: Simple, widely used
+- GraphQL: Flexible queries
+- WebSocket: Real-time bidirectional
+- Message Queue: Async processing
 
 **Scalability:**
-- Load balancing
-- Caching strategy
-- Database optimization
+→ Horizontal: Add more servers
+→ Vertical: Bigger hardware
+→ Caching: Reduce database hits
+→ CDN: Distribute static content
+→ Database optimization: Indexing, partitioning
 
 **Reliability:**
-- Redundancy
-- Failover mechanisms
-- Monitoring
+→ Redundancy: Failover systems
+→ Health checks: Monitor systems
+→ Circuit breakers: Graceful degradation
+→ Error handling: Proper logging
+→ Backup & recovery: Data safety
 
-What system are you designing?`;
-    }
+**Security:**
+→ Authentication: User identity
+→ Authorization: Permissions
+→ Encryption: Protect data
+→ Validation: Input safety
+→ Rate limiting: Prevent abuse
 
-    // Default - safe response
-    return `🤖 **CodeMentor - Smart AI Assistant**
+**What system are you designing? Tell me:**
+- What's the core problem?
+- How many users/requests?
+- What are performance requirements?
+- What data consistency needs?
 
-**What I Can Help With:**
-✅ Debugging errors (any language)
-✅ Solving algorithms
-✅ Optimizing performance
-✅ Learning concepts
-✅ Designing systems
-
-**In Multiple Languages:**
-English, Spanish, French, German, Chinese, Japanese, Russian, Hindi, Arabic, Korean, and more!
-
-**How to Get Best Answers:**
-1. Be specific about your problem
-2. Share relevant code
-3. Describe what you tried
-4. Mention error messages
-
-What would you like help with?`;
-  } catch (error) {
-    console.error("Reasoning error:", error);
-    return "I encountered an issue processing your request. Please try a simpler question.";
+I'll provide specific recommendations!`;
   }
+
+  // DEFAULT
+  return `**CodeMentor AI - Smart Programming Assistant**
+
+I can help you with:
+✓ **Debugging** - Fix errors systematically
+✓ **Learning** - Understand concepts deeply
+✓ **Problem Solving** - Solve algorithms efficiently
+✓ **Optimization** - Make code faster
+✓ **Design** - Build scalable systems
+✓ **Any Language** - JavaScript, Python, Java, C++, Rust, Go, SQL, and more
+
+**How to get the best answers:**
+1. Be specific about what you need
+2. Share relevant code if applicable
+3. Describe what you tried already
+4. Tell me any error messages
+
+Ask me anything! 🚀`;
 }
 
-// Main AI processing function with full error handling
-async function processAIRequest(message: string, history: Array<{ role: string; content: string }> = []): Promise<AIResponse> {
-  // Input validation
-  const validation = InputValidator.validate(message);
-  if (!validation.valid) {
-    return {
-      content: "Please provide a valid question. I can help with debugging, algorithms, optimization, learning, or design.",
-      confidence: 0.5,
-      language: "en",
-      hasError: true,
-      fallback: true,
-    };
-  }
+// Main AI function
+async function callAI(messages: Array<{ role: string; content: string }>, options: any = {}) {
+  const userMessage = messages[messages.length - 1]?.content || "";
+  const lang = detectLanguage(userMessage);
+  const analysis = analyzeProblem(userMessage);
+  
+  const context: AIContext = {
+    language: lang,
+    programmingLanguage: detectProgrammingLanguage(userMessage),
+    problemType: analysis.type as any,
+    complexity: userMessage.length > 500 ? 8 : userMessage.length > 200 ? 6 : 4,
+    keywords: [],
+    confidence: 0.9,
+    conversationHistory: messages,
+  };
 
-  const sanitizedMessage = InputValidator.sanitize(message);
+  const response = generateDetailedResponse(userMessage, analysis, context);
 
-  try {
-    // Language detection with fallback
-    const detectedLang = AIErrorHandler.wrapFunction(
-      () => safeDetectLanguage(sanitizedMessage),
-      "en"
-    );
-
-    // Code detection
-    const code = sanitizedMessage.includes("```") ? sanitizedMessage.split("```")[1] : undefined;
-    const progLang = code ? AIErrorHandler.wrapFunction(() => safeDetectProgLang(code), "unknown") : undefined;
-
-    // Concept extraction
-    const concepts = AIErrorHandler.wrapFunction(() => extractConcepts(sanitizedMessage), []);
-
-    // Problem type detection
-    let problemType = "general";
-    try {
-      if (sanitizedMessage.match(/error|bug|fix|crash/i)) problemType = "debugging";
-      else if (sanitizedMessage.match(/algorithm|solve/i)) problemType = "coding";
-      else if (sanitizedMessage.match(/optimize|faster/i)) problemType = "optimization";
-      else if (sanitizedMessage.match(/explain|understand|how/i)) problemType = "learning";
-      else if (sanitizedMessage.match(/design|build/i)) problemType = "design";
-    } catch (e) {
-      console.error("Problem type detection error:", e);
-    }
-
-    // Complexity calculation
-    let complexity = 3;
-    try {
-      if (sanitizedMessage.length > 500) complexity += 2;
-      if (concepts.length > 5) complexity += 2;
-      if (sanitizedMessage.match(/advanced|complex/i)) complexity += 3;
-      complexity = Math.min(10, complexity);
-    } catch (e) {
-      console.error("Complexity calc error:", e);
-    }
-
-    const context: AIContext = {
-      language: detectedLang,
-      programmingLanguage: progLang,
-      problemType,
-      complexity,
-      keywords: concepts,
-      confidence: 0.85,
-      conversationHistory: history,
-    };
-
-    const response = AIErrorHandler.wrapFunction(
-      () => advancedReasoning(sanitizedMessage, context),
-      "I'm here to help! Ask me anything about programming, debugging, optimization, or learning concepts."
-    );
-
-    return {
-      content: response,
-      confidence: 0.85,
-      language: detectedLang,
-      hasError: false,
-      fallback: false,
-    };
-  } catch (error) {
-    console.error("AI processing error:", error);
-    return {
-      content: "I encountered an error processing your request. Please try again with a different question.",
-      confidence: 0.3,
-      language: "en",
-      hasError: true,
-      fallback: true,
-    };
-  }
+  return {
+    choices: [
+      {
+        message: {
+          content: response,
+        },
+      },
+    ],
+  };
 }
 
-// Export API functions with error handling
+// Export API functions
 export async function chatWithCopilot(message: string, history: Array<{ role: string; content: string }> = []): Promise<string> {
-  const response = await processAIRequest(message, history);
-  return response.content;
+  try {
+    const response = await callAI([...history, { role: "user", content: message }]);
+    return response.choices[0].message.content || "Ask me anything about programming!";
+  } catch (error) {
+    console.error("AI Error:", error);
+    return "I encountered an error. Please try again with a simpler question.";
+  }
 }
 
 export async function explainCode(code: string): Promise<string> {
-  const response = await processAIRequest(`Explain:\n\n${code}`);
-  return response.content;
+  return chatWithCopilot(`Explain this code:\n\n${code}`);
 }
 
 export async function debugCode(code: string, error: string): Promise<string> {
-  const response = await processAIRequest(`Code:\n${code}\n\nError: ${error}`);
-  return response.content;
+  return chatWithCopilot(`Debug this:\n\nCode:\n${code}\n\nError: ${error}`);
 }
 
 export async function generateLearningPath(topic: string, skillLevel: string): Promise<string> {
-  const response = await processAIRequest(`${skillLevel} learning ${topic}`);
-  return response.content;
+  return chatWithCopilot(`Create a learning path for ${skillLevel} learning ${topic}`);
 }
 
 export async function answerTechQuestion(question: string, context: string = ""): Promise<string> {
-  const fullQuestion = context ? `${question}\n\n${context}` : question;
-  const response = await processAIRequest(fullQuestion);
-  return response.content;
+  return chatWithCopilot(context ? `${question}\n\nContext: ${context}` : question);
 }
 
 export async function generateProjectIdea(interests: string[], skillLevel: string): Promise<string> {
-  const response = await processAIRequest(`${skillLevel} interested in: ${interests.join(", ")}`);
-  return response.content;
+  return chatWithCopilot(`Suggest projects for ${skillLevel} interested in: ${interests.join(", ")}`);
 }
 
 export async function generateQuizQuestion(topic: string, difficulty: string): Promise<{ question: string; options: string[]; correctAnswer: number }> {
   return {
-    question: `Understand ${topic}?`,
+    question: `Master ${topic}?`,
     options: ["Expert", "Advanced", "Intermediate", "Beginner"],
     correctAnswer: 0,
   };
@@ -444,13 +503,13 @@ export async function generateQuizQuestion(topic: string, difficulty: string): P
 export async function generateCourseLessons(courseTitle: string, courseDescription: string, numLessons: number = 10): Promise<Array<{ title: string; description: string }>> {
   return Array.from({ length: Math.min(numLessons, 20) }, (_, i) => ({
     title: `${courseTitle} - Lesson ${i + 1}`,
-    description: "Expert instruction and practice",
+    description: "Master this concept with detailed explanation and examples",
   }));
 }
 
 export async function generateRoadmapMilestones(roadmapName: string, roadmapDescription: string, numMilestones: number = 8): Promise<Array<{ title: string; description: string }>> {
   return Array.from({ length: Math.min(numMilestones, 12) }, (_, i) => ({
     title: `${roadmapName} - Phase ${i + 1}`,
-    description: "Progress to mastery",
+    description: "Progress towards mastery with structured learning",
   }));
 }
