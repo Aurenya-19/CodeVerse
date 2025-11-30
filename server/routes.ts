@@ -91,10 +91,20 @@ export async function registerRoutes(
     }
   });
 
-  // Arenas
+  // Arenas with caching & performance headers
   app.get("/api/arenas", async (req, res) => {
-    const arenas = await storage.getArenas();
-    res.json(arenas);
+    try {
+      const { cacheManager } = await import("./cache");
+      let arenas = cacheManager.getArenas();
+      if (!arenas) {
+        arenas = await storage.getArenas();
+        cacheManager.setArenas(arenas);
+      }
+      res.set("Cache-Control", "public, max-age=300"); // 5min browser cache
+      res.json(arenas);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
   });
 
   app.get("/api/arenas/:slug", async (req, res) => {
@@ -103,10 +113,22 @@ export async function registerRoutes(
     res.json(arena);
   });
 
-  // Challenges
+  // Challenges with caching & performance headers
   app.get("/api/challenges", async (req, res) => {
-    const challenges = await storage.getChallenges();
-    res.json(challenges);
+    try {
+      const { cacheManager } = await import("./cache");
+      const arenaId = req.query.arenaId as string | undefined;
+      const cacheKey = arenaId ? `arena_${arenaId}` : "all";
+      
+      let challenges = arenaId 
+        ? await storage.getChallenges(arenaId)
+        : await storage.getChallenges();
+      
+      res.set("Cache-Control", "public, max-age=300");
+      res.json(challenges);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
   });
 
   app.get("/api/challenges/:id", async (req, res) => {

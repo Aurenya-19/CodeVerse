@@ -11,5 +11,18 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Optimize connection pool for high concurrency
+const pool = new Pool({ 
+  connectionString: process.env.DATABASE_URL,
+  max: 20, // Max 20 concurrent connections
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+});
+
+// Connection pool monitoring
+pool.on("error", (err) => {
+  console.error("Unexpected error on idle client", err);
+});
+
+export { pool };
 export const db = drizzle({ client: pool, schema });
