@@ -122,7 +122,7 @@ export async function setupAuth(app: Express) {
   passport.deserializeUser((user: any, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
-    console.log(`[Auth] Login request from: ${req.hostname} - Callback will be: ${callbackURL}`);
+    console.log(`[Auth] Login request from: ${req.hostname} - Callback will be: ${initialCallbackURL}`);
     passport.authenticate("google", {
       scope: ["profile", "email"],
     })(req, res, next);
