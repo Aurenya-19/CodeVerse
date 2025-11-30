@@ -120,6 +120,85 @@ export async function generateQuizQuestion(topic: string, difficulty: string): P
   }
 }
 
+export async function generateCourseLessons(courseTitle: string, courseDescription: string, numLessons: number = 10): Promise<Array<{ title: string; description: string }>> {
+  const response = await openai.chat.completions.create({
+    model: "gpt-5",
+    messages: [
+      {
+        role: "system",
+        content: "You are an expert course curriculum designer. Generate detailed, practical lesson outlines for tech courses. Return ONLY a JSON array of lesson objects with no markdown, no extra text.",
+      },
+      {
+        role: "user",
+        content: `Create ${numLessons} detailed lessons for this course:
+Title: ${courseTitle}
+Description: ${courseDescription}
+
+Return ONLY valid JSON array like: [{"title": "Lesson Title", "description": "What students will learn"}]
+Each description should be 1-2 sentences explaining the learning objectives. NO MARKDOWN, NO EXTRA TEXT.`,
+      },
+    ],
+    response_format: { type: "json_object" },
+  });
+
+  try {
+    const content = response.choices[0].message.content || "[]";
+    // Handle both array and object response formats
+    let lessonsData = Array.isArray(content) ? content : JSON.parse(content);
+    if (!Array.isArray(lessonsData)) {
+      lessonsData = lessonsData.lessons || [];
+    }
+    return lessonsData.slice(0, numLessons).map((l: any) => ({
+      title: l.title || "Untitled Lesson",
+      description: l.description || "Learn this topic",
+    }));
+  } catch {
+    return Array.from({ length: numLessons }, (_, i) => ({
+      title: `${courseTitle} - Lesson ${i + 1}`,
+      description: `Master key concepts and practical skills in this lesson`,
+    }));
+  }
+}
+
+export async function generateRoadmapMilestones(roadmapName: string, roadmapDescription: string, numMilestones: number = 8): Promise<Array<{ title: string; description: string }>> {
+  const response = await openai.chat.completions.create({
+    model: "gpt-5",
+    messages: [
+      {
+        role: "system",
+        content: "You are an expert learning path designer. Generate clear milestone objectives for learning roadmaps. Return ONLY a JSON array of milestone objects with no markdown, no extra text.",
+      },
+      {
+        role: "user",
+        content: `Create ${numMilestones} learning milestones for this roadmap:
+Name: ${roadmapName}
+Description: ${roadmapDescription}
+
+Return ONLY valid JSON array like: [{"title": "Milestone Name", "description": "What you'll accomplish"}]
+Each description should be 1-2 sentences about the milestone's learning outcomes. NO MARKDOWN, NO EXTRA TEXT.`,
+      },
+    ],
+    response_format: { type: "json_object" },
+  });
+
+  try {
+    const content = response.choices[0].message.content || "[]";
+    let milestonesData = Array.isArray(content) ? content : JSON.parse(content);
+    if (!Array.isArray(milestonesData)) {
+      milestonesData = milestonesData.milestones || [];
+    }
+    return milestonesData.slice(0, numMilestones).map((m: any) => ({
+      title: m.title || "Untitled Milestone",
+      description: m.description || "Complete this milestone",
+    }));
+  } catch {
+    return Array.from({ length: numMilestones }, (_, i) => ({
+      title: `${roadmapName} - Phase ${i + 1}`,
+      description: `Progress through advanced concepts and practical applications`,
+    }));
+  }
+}
+
 export async function chatWithCopilot(message: string, history: Array<{ role: string; content: string }> = []): Promise<string> {
   const messages = [
     {
