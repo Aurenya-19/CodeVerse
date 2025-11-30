@@ -33,7 +33,7 @@ import {
   Globe,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import techHiveLogo from "@assets/ChatGPT Image Nov 30, 2025, 03_04_43 PM_1764495927682.png";
+import codeVerseLogo from "@assets/codeverse-logo.png";
 
 const mainNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -73,7 +73,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-4">
         <Link href="/" className="flex items-center gap-3">
-          <img src={techHiveLogo} alt="CodeVerse Logo" className="h-10 w-10" />
+          <img src={codeVerseLogo} alt="CodeVerse Logo" className="h-10 w-10" />
           <div className="flex flex-col">
             <span className="font-display text-xl font-bold">CodeVerse</span>
             <span className="text-xs text-muted-foreground">Learn. Build. Grow.</span>
