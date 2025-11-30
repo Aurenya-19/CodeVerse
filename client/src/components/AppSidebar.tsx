@@ -28,12 +28,12 @@ import {
   Target,
   Map,
   LogOut,
-  Hexagon,
   Github,
   Zap,
   Globe,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import techHiveLogo from "@assets/ChatGPT Image Nov 30, 2025, 03_04_43 PM_1764495927682.png";
 
 const mainNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -73,9 +73,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-4">
         <Link href="/" className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-            <Hexagon className="h-6 w-6 text-primary-foreground" />
-          </div>
+          <img src={techHiveLogo} alt="TechHive Logo" className="h-10 w-10" />
           <div className="flex flex-col">
             <span className="font-display text-xl font-bold">TechHive</span>
             <span className="text-xs text-muted-foreground">Learn. Build. Grow.</span>
