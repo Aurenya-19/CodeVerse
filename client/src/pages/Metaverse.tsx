@@ -1,38 +1,102 @@
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Globe, Sparkles, Crown, Zap } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Globe, Sparkles, Crown, Zap, Flame, Trophy, Users, Palette, Wand2, Heart } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
-interface LeaderboardEntry {
-  rank: number;
-  user: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    profileImageUrl?: string;
-  };
-  profile: {
-    xp: number;
-    level: number;
-  };
-  avatar?: {
-    aura: string;
-    outfit: string;
-  };
+interface MetaverseUser {
+  user: { id: string; firstName: string; lastName: string; profileImageUrl: string };
+  profile: { xp: number; level: number; dailyStreak: number };
+  skinTone: string;
+  hairStyle: string;
+  outfit: string;
+  aura: string;
 }
 
+interface UserAvatar {
+  id: string;
+  userId: string;
+  skinTone: string;
+  hairStyle: string;
+  outfit: string;
+  aura: string;
+}
+
+const avatarCustomizations = {
+  skinTones: ["default", "light", "medium", "dark", "olive", "golden"],
+  hairStyles: ["default", "short", "long", "curly", "straight", "spiky"],
+  outfits: ["default", "casual", "formal", "gaming", "hacker", "scientist"],
+  auras: ["none", "blue", "red", "gold", "purple", "rainbow"],
+};
+
 export default function Metaverse() {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [selectedTab, setSelectedTab] = useState("leaderboard");
+  const [customizing, setCustomizing] = useState(false);
+  const [avatarData, setAvatarData] = useState<UserAvatar | null>(null);
 
   const { data: leaderboard, isLoading } = useQuery({
     queryKey: ["/api/metaverse/leaderboard"],
-    queryFn: async () => {
-      const response = await fetch("/api/metaverse/leaderboard");
-      return response.json();
-    },
   });
+
+  const { data: userAvatar, refetch: refetchAvatar } = useQuery({
+    queryKey: ["/api/avatar"],
+  });
+
+  useEffect(() => {
+    if (userAvatar) {
+      setAvatarData(userAvatar);
+    }
+  }, [userAvatar]);
+
+  const handleCreateAvatar = async () => {
+    if (!avatarData) return;
+    try {
+      const response = await apiRequest("POST", "/api/avatar/create", avatarData);
+      setAvatarData(response);
+      refetchAvatar();
+      toast({
+        title: "Avatar Created!",
+        description: "Your metaverse avatar is ready.",
+      });
+      setCustomizing(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create avatar",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateAvatar = async () => {
+    if (!avatarData) return;
+    try {
+      const response = await apiRequest("PATCH", "/api/avatar", avatarData);
+      setAvatarData(response);
+      refetchAvatar();
+      toast({
+        title: "Avatar Updated!",
+        description: "Your metaverse avatar has been customized.",
+      });
+      setCustomizing(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update avatar",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     if (!canvasRef.current || !leaderboard) return;
@@ -56,7 +120,7 @@ export default function Metaverse() {
     ctx.fillStyle = "#7C3AED";
     ctx.font = "bold 24px 'Space Grotesk'";
     ctx.textAlign = "center";
-    ctx.fillText("🌐 METAVERSE LEADERBOARD HALL", canvas.width / 2, 40);
+    ctx.fillText("METAVERSE LEADERBOARD HALL", canvas.width / 2, 40);
 
     // Draw top 3 pedestals
     const pedestalData = [
