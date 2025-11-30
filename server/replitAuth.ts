@@ -87,12 +87,24 @@ export async function setupAuth(app: Express) {
   const ensureStrategy = (domain: string) => {
     const strategyName = `replitauth:${domain}`;
     if (!registeredStrategies.has(strategyName)) {
+      // Support explicit redirect URI via environment variable
+      // Format: REDIRECT_URI_<DOMAIN> (e.g., REDIRECT_URI_localhost_5000)
+      const envKey = `REDIRECT_URI_${domain.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      let callbackURL = process.env[envKey];
+      
+      // Fallback to constructing from domain if env var not set
+      if (!callbackURL) {
+        callbackURL = `https://${domain}/api/callback`;
+      }
+      
+      console.log(`[Auth] Registering strategy for ${domain} with callback: ${callbackURL}`);
+      
       const strategy = new Strategy(
         {
           name: strategyName,
           config,
           scope: "openid email profile offline_access",
-          callbackURL: `https://${domain}/api/callback`,
+          callbackURL,
         },
         verify
       );
