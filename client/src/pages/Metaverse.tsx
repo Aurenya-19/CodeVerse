@@ -44,24 +44,24 @@ export default function Metaverse() {
   const [customizing, setCustomizing] = useState(false);
   const [avatarData, setAvatarData] = useState<UserAvatar | null>(null);
 
-  const { data: leaderboard, isLoading } = useQuery({
+  const { data: leaderboard, isLoading } = useQuery<MetaverseUser[]>({
     queryKey: ["/api/metaverse/leaderboard"],
   });
 
-  const { data: userAvatar, refetch: refetchAvatar } = useQuery({
+  const { data: userAvatar, refetch: refetchAvatar } = useQuery<UserAvatar | null>({
     queryKey: ["/api/avatar"],
   });
 
   useEffect(() => {
     if (userAvatar) {
-      setAvatarData(userAvatar);
+      setAvatarData(userAvatar as UserAvatar);
     }
   }, [userAvatar]);
 
   const handleCreateAvatar = async () => {
     if (!avatarData) return;
     try {
-      const response = await apiRequest("POST", "/api/avatar/create", avatarData);
+      const response = (await apiRequest("POST", "/api/avatar/create", avatarData)) as UserAvatar;
       setAvatarData(response);
       refetchAvatar();
       toast({
@@ -81,7 +81,7 @@ export default function Metaverse() {
   const handleUpdateAvatar = async () => {
     if (!avatarData) return;
     try {
-      const response = await apiRequest("PATCH", "/api/avatar", avatarData);
+      const response = (await apiRequest("PATCH", "/api/avatar", avatarData)) as UserAvatar;
       setAvatarData(response);
       refetchAvatar();
       toast({
@@ -160,7 +160,7 @@ export default function Metaverse() {
     ctx.fillStyle = "#7C3AED";
     ctx.font = "14px 'Space Grotesk'";
     ctx.textAlign = "center";
-    leaderboard?.slice(0, 3).forEach((entry: LeaderboardEntry, i: number) => {
+    leaderboard?.slice(0, 3).forEach((entry: MetaverseUser, i: number) => {
       const x =
         pedestalData[i]?.x || canvas.width / 2;
       ctx.fillText(
@@ -219,7 +219,7 @@ export default function Metaverse() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {leaderboard?.slice(0, 10).map((entry: LeaderboardEntry, index: number) => (
+            {leaderboard?.slice(0, 10).map((entry: MetaverseUser, index: number) => (
               <div
                 key={entry.user.id}
                 className="flex items-center justify-between rounded-lg border border-border bg-card p-4 hover-elevate"
@@ -240,13 +240,13 @@ export default function Metaverse() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {entry.avatar?.aura && (
+                  {entry.aura && (
                     <Badge
                       variant="secondary"
                       className="flex items-center gap-1"
                     >
                       <Sparkles className="h-3 w-3" />
-                      {entry.avatar.aura}
+                      {entry.aura}
                     </Badge>
                   )}
                   <Badge className="bg-purple-500/20 text-purple-300 flex items-center gap-1">
@@ -296,7 +296,7 @@ export default function Metaverse() {
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-blue-500">
-              {Math.max(...(leaderboard?.map((e: LeaderboardEntry) => e.profile.level) || [0])) || 0}
+              {Math.max(...((leaderboard || []).map((e: MetaverseUser) => e.profile.level) || [0])) || 0}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               Highest achievable
