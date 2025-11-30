@@ -36,6 +36,8 @@ import TechWorld from "@/pages/TechWorld";
 import SwarmProjects from "@/pages/SwarmProjects";
 import TechSpotlight from "@/pages/TechSpotlight";
 import GitHub from "@/pages/GitHub";
+import Resources from "@/pages/Resources";
+import ResourceDetail from "@/pages/ResourceDetail";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 

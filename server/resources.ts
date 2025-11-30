@@ -130,12 +130,58 @@ export const techResources = {
       { title: "Reverse Engineering Guide", url: "https://reverse.put.as", type: "guide" },
     ],
   },
+  physics: {
+    name: "Applied Physics & Computational Physics",
+    difficulty: "Expert",
+    popularity: "2% of developers",
+    resources: [
+      { title: "Physics Engine Development", url: "https://www.bulletphysics.org", type: "framework" },
+      { title: "OpenFOAM CFD Simulation", url: "https://www.openfoam.com", type: "tool" },
+      { title: "MIT Physics OpenCourseWare", url: "https://ocw.mit.edu/courses/physics", type: "course" },
+      { title: "Quantum Mechanics Simulation", url: "https://quantumcomputing.ibm.com", type: "platform" },
+      { title: "Classical Mechanics - Landau & Lifshitz", url: "https://www.amazon.com/Mechanics-Course-Theoretical-Physics-Vol-1", type: "book" },
+    ],
+    deeperTopics: [
+      { name: "Computational Fluid Dynamics", level: "Advanced", tools: ["OpenFOAM", "ANSYS Fluent", "COMSOL"] },
+      { name: "Molecular Dynamics Simulation", level: "Advanced", tools: ["GROMACS", "LAMMPS", "NAMD"] },
+      { name: "Quantum Mechanics", level: "Expert", tools: ["QuTiP", "Qiskit", "PennyLane"] },
+      { name: "Particle Physics Simulation", level: "Expert", tools: ["Geant4", "ROOT", "Pythia8"] },
+    ],
+  },
+  maths: {
+    name: "Advanced Mathematics & Numerical Analysis",
+    difficulty: "Expert",
+    popularity: "3% of developers",
+    resources: [
+      { title: "SageMath Computer Algebra", url: "https://www.sagemath.org", type: "tool" },
+      { title: "SymPy Symbolic Mathematics", url: "https://www.sympy.org", type: "framework" },
+      { title: "MIT Computational Mathematics", url: "https://ocw.mit.edu/courses/mathematics", type: "course" },
+      { title: "Numerical Recipes in C++", url: "http://numerical.recipes", type: "book" },
+      { title: "Coq Theorem Prover", url: "https://coq.inria.fr", type: "tool" },
+    ],
+    deeperTopics: [
+      { name: "Numerical Linear Algebra", level: "Advanced", tools: ["BLAS", "LAPACK", "Eigen", "NumPy"] },
+      { name: "Differential Equations", level: "Advanced", tools: ["SciPy", "Assimulo", "DifferentialEquations.jl"] },
+      { name: "Formal Verification & Proofs", level: "Expert", tools: ["Coq", "Lean", "Isabelle/HOL"] },
+      { name: "Optimization & Control Theory", level: "Expert", tools: ["CVX", "CVXOPT", "YALMIP"] },
+      { name: "Abstract Algebra & Group Theory", level: "Expert", tools: ["GAP", "Magma", "SageMath"] },
+    ],
+  },
 };
 
 export async function getTechResources() {
   return {
     resources: techResources,
     total: Object.keys(techResources).length,
-    raretechCount: Object.keys(techResources).length - 8, // First 8 are mainstream
+    raretechCount: Object.keys(techResources).length - 8,
+  };
+}
+
+export async function getTechResourceDetail(resourceId: string) {
+  const resource = techResources[resourceId as keyof typeof techResources];
+  if (!resource) return null;
+  return {
+    id: resourceId,
+    ...resource,
   };
 }
