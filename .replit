@@ -44,4 +44,7 @@ integrations = ["javascript_openai:1.0.0", "javascript_log_in_with_replit:1.0.0"
 [userenv]
 
 [userenv.production]
-PUBLIC_URL = "https://techhive.onrender.com"
+
+[userenv.shared]
+GOOGLE_CALLBACK_URL = "https://techhive-hju8.onrender.com/api/callback"
+PUBLIC_URL = "techhive-hju8.onrender.com"
