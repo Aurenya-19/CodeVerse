@@ -79,23 +79,19 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
+  // Keep track of registered strategies
   const registeredStrategies = new Set<string>();
 
-  const ensureStrategy = (domain: string, protocol: string = "https") => {
+  // Helper function to ensure strategy exists for a domain
+  const ensureStrategy = (domain: string) => {
     const strategyName = `replitauth:${domain}`;
     if (!registeredStrategies.has(strategyName)) {
-      // Use explicit PUBLIC_URL for production, fallback to dynamic for dev
-      const publicUrl = process.env.PUBLIC_URL || `${protocol}://${domain}`;
-      const callbackURL = `${publicUrl}/api/callback`;
-      
-      console.log(`[Auth] Registering strategy for ${domain} with callback: ${callbackURL}`);
-      
       const strategy = new Strategy(
         {
           name: strategyName,
           config,
           scope: "openid email profile offline_access",
-          callbackURL,
+          callbackURL: `https://${domain}/api/callback`,
         },
         verify
       );
@@ -108,7 +104,7 @@ export async function setupAuth(app: Express) {
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
-    ensureStrategy(req.hostname, req.protocol);
+    ensureStrategy(req.hostname);
     passport.authenticate(`replitauth:${req.hostname}`, {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"],
@@ -116,7 +112,7 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/callback", (req, res, next) => {
-    ensureStrategy(req.hostname, req.protocol);
+    ensureStrategy(req.hostname);
     passport.authenticate(`replitauth:${req.hostname}`, {
       successReturnToOrRedirect: "/",
       failureRedirect: "/api/login",
@@ -125,11 +121,10 @@ export async function setupAuth(app: Express) {
 
   app.get("/api/logout", (req, res) => {
     req.logout(() => {
-      const publicUrl = process.env.PUBLIC_URL || `${req.protocol}://${req.hostname}`;
       res.redirect(
         client.buildEndSessionUrl(config, {
           client_id: process.env.REPL_ID!,
-          post_logout_redirect_uri: publicUrl,
+          post_logout_redirect_uri: `https://${req.hostname}`,
         }).href
       );
     });
@@ -139,7 +134,7 @@ export async function setupAuth(app: Express) {
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user.expires_at) {
+  if (!req.isAuthenticated() || !user?.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
