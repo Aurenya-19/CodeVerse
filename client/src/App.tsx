@@ -29,6 +29,8 @@ import TechWorld from "@/pages/TechWorld";
 import SwarmProjects from "@/pages/SwarmProjects";
 import TechSpotlight from "@/pages/TechSpotlight";
 import GitHub from "@/pages/GitHub";
+import Privacy from "@/pages/Privacy";
+import Terms from "@/pages/Terms";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const style = {
@@ -97,6 +99,8 @@ function Router() {
     <Switch>
       <Route path="/landing" component={Landing} />
       <Route path="/onboarding" component={Onboarding} />
+      <Route path="/privacy" component={Privacy} />
+      <Route path="/terms" component={Terms} />
       
       <Route path="/">
         {user ? <ProtectedRoute component={Dashboard} /> : <Redirect to="/landing" />}
