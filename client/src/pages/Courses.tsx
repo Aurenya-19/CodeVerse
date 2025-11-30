@@ -140,13 +140,11 @@ function CourseCard({
 
             <div className="mt-4 flex items-center justify-end gap-2">
               {!isEnrolled ? (
-                <Button
-                  onClick={() => startCourse.mutate()}
-                  disabled={startCourse.isPending}
-                  data-testid={`button-start-course-${course.id}`}
-                >
-                  <PlayCircle className="mr-2 h-4 w-4" />
-                  {startCourse.isPending ? "Enrolling..." : "Start Course"}
+                <Button asChild data-testid={`button-start-course-${course.id}`}>
+                  <Link href={`/courses/${course.id}`}>
+                    <PlayCircle className="mr-2 h-4 w-4" />
+                    Start Course
+                  </Link>
                 </Button>
               ) : isCompleted ? (
                 <Badge variant="outline" className="text-chart-5">

@@ -132,20 +132,18 @@ function RoadmapCard({
                 </span>
               </div>
               {!isStarted ? (
-                <Button
-                  onClick={() => startRoadmap.mutate()}
-                  disabled={startRoadmap.isPending}
-                  data-testid={`button-start-roadmap-${roadmap.id}`}
-                >
-                  <PlayCircle className="mr-2 h-4 w-4" />
-                  {startRoadmap.isPending ? "Starting..." : "Start Path"}
+                <Button asChild data-testid={`button-start-roadmap-${roadmap.id}`}>
+                  <Link href={`/roadmaps/${roadmap.slug}`}>
+                    <PlayCircle className="mr-2 h-4 w-4" />
+                    Start Path
+                  </Link>
                 </Button>
               ) : (
                 <Button variant="outline" asChild>
-                  <a href={`/roadmaps/${roadmap.slug}`}>
+                  <Link href={`/roadmaps/${roadmap.slug}`}>
                     Continue
                     <ChevronRight className="ml-1 h-4 w-4" />
-                  </a>
+                  </Link>
                 </Button>
               )}
             </div>

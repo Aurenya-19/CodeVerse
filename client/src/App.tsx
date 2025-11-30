@@ -23,6 +23,8 @@ import ProjectDetail from "@/pages/ProjectDetail";
 import Projects from "@/pages/Projects";
 import ClanDetail from "@/pages/ClanDetail";
 import QuestDetail from "@/pages/QuestDetail";
+import CourseDetail from "@/pages/CourseDetail";
+import RoadmapDetail from "@/pages/RoadmapDetail";
 import Clans from "@/pages/Clans";
 import Feed from "@/pages/Feed";
 import Quests from "@/pages/Quests";
@@ -151,6 +153,9 @@ function Router() {
       <Route path="/courses">
         <ProtectedRoute component={Courses} />
       </Route>
+      <Route path="/courses/:courseId">
+        <ProtectedRoute component={CourseDetail} />
+      </Route>
       <Route path="/leaderboards">
         <ProtectedRoute component={Leaderboards} />
       </Route>
@@ -162,6 +167,9 @@ function Router() {
       </Route>
       <Route path="/roadmaps">
         <ProtectedRoute component={Roadmaps} />
+      </Route>
+      <Route path="/roadmaps/:slug">
+        <ProtectedRoute component={RoadmapDetail} />
       </Route>
       <Route path="/ai-copilot">
         <ProtectedRoute component={AICopilot} />
