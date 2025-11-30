@@ -18,7 +18,10 @@ import Dashboard from "@/pages/Dashboard";
 import Arenas from "@/pages/Arenas";
 import ArenaDetail from "@/pages/ArenaDetail";
 import ChallengeDetail from "@/pages/ChallengeDetail";
+import ProjectDetail from "@/pages/ProjectDetail";
 import Projects from "@/pages/Projects";
+import ClanDetail from "@/pages/ClanDetail";
+import QuestDetail from "@/pages/QuestDetail";
 import Clans from "@/pages/Clans";
 import Feed from "@/pages/Feed";
 import Quests from "@/pages/Quests";
@@ -123,14 +126,23 @@ function Router() {
       <Route path="/projects">
         <ProtectedRoute component={Projects} />
       </Route>
+      <Route path="/projects/:id">
+        <ProtectedRoute component={ProjectDetail} />
+      </Route>
       <Route path="/clans">
         <ProtectedRoute component={Clans} />
+      </Route>
+      <Route path="/clans/:id">
+        <ProtectedRoute component={ClanDetail} />
       </Route>
       <Route path="/feed">
         <ProtectedRoute component={Feed} />
       </Route>
       <Route path="/quests">
         <ProtectedRoute component={Quests} />
+      </Route>
+      <Route path="/quests/:id">
+        <ProtectedRoute component={QuestDetail} />
       </Route>
       <Route path="/courses">
         <ProtectedRoute component={Courses} />

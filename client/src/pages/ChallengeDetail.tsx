@@ -14,8 +14,8 @@ import { apiRequest } from "@/lib/queryClient";
 import type { Challenge } from "@shared/schema";
 
 interface ChallengeWithDetails extends Challenge {
-  instructions?: string;
-  starter_code?: string;
+  instructions: string | null;
+  starter_code: string | null;
   testCases?: { input: string; output: string; description: string }[];
 }
 
