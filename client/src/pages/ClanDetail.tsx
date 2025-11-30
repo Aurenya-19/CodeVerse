@@ -120,7 +120,7 @@ export default function ClanDetail() {
                 <div className="text-center">
                   <Trophy className="mx-auto h-6 w-6 text-chart-1 mb-2" />
                   <p className="text-sm text-muted-foreground">Rank</p>
-                  <p className="mt-2 font-display text-2xl font-bold">#{clan.rank || "—"}</p>
+                  <p className="mt-2 font-display text-2xl font-bold">#{(clan as any).rank || "—"}</p>
                 </div>
               </CardContent>
             </Card>

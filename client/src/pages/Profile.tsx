@@ -154,7 +154,13 @@ export default function Profile() {
           <div className="flex flex-col items-center sm:flex-row sm:items-end gap-6">
             <div className="relative -mt-16">
               <Avatar className="h-32 w-32 border-4 border-background">
-                <AvatarImage src={user?.profileImageUrl || undefined} className="object-cover" />
+                <AvatarImage 
+                  src={user?.profileImageUrl ? `${user.profileImageUrl}?w=128&h=128&fit=crop` : undefined}
+                  srcSet={user?.profileImageUrl ? `${user.profileImageUrl}?w=128&h=128&fit=crop 1x, ${user.profileImageUrl}?w=256&h=256&fit=crop 2x` : undefined}
+                  className="object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
                 <AvatarFallback className="text-4xl font-bold">
                   {user?.firstName?.[0] || "U"}
                 </AvatarFallback>

@@ -50,7 +50,13 @@ function ConversationItem({
     >
       <div className="relative">
         <Avatar className="h-12 w-12">
-          <AvatarImage src={conversation.user.profileImageUrl || undefined} className="object-cover" />
+          <AvatarImage 
+            src={conversation.user.profileImageUrl ? `${conversation.user.profileImageUrl}?w=48&h=48&fit=crop` : undefined}
+            srcSet={conversation.user.profileImageUrl ? `${conversation.user.profileImageUrl}?w=48&h=48&fit=crop 1x, ${conversation.user.profileImageUrl}?w=96&h=96&fit=crop 2x` : undefined}
+            className="object-cover"
+            loading="lazy"
+            decoding="async"
+          />
           <AvatarFallback>
             {conversation.user.firstName?.[0] || "U"}
           </AvatarFallback>
@@ -203,7 +209,13 @@ export default function Messages() {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <Avatar className="h-10 w-10">
-                <AvatarImage src={selectedUser.profileImageUrl || undefined} className="object-cover" />
+                <AvatarImage 
+                  src={selectedUser.profileImageUrl ? `${selectedUser.profileImageUrl}?w=40&h=40&fit=crop` : undefined}
+                  srcSet={selectedUser.profileImageUrl ? `${selectedUser.profileImageUrl}?w=40&h=40&fit=crop 1x, ${selectedUser.profileImageUrl}?w=80&h=80&fit=crop 2x` : undefined}
+                  className="object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
                 <AvatarFallback>
                   {selectedUser.firstName?.[0] || "U"}
                 </AvatarFallback>

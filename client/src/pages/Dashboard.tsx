@@ -257,7 +257,13 @@ export default function Dashboard() {
           </div>
           <div className="relative">
             <Avatar className="h-14 w-14 ring-2 ring-primary ring-offset-2 ring-offset-background">
-              <AvatarImage src={user?.profileImageUrl || undefined} className="object-cover" />
+              <AvatarImage 
+                src={user?.profileImageUrl ? `${user.profileImageUrl}?w=56&h=56&fit=crop` : undefined}
+                srcSet={user?.profileImageUrl ? `${user.profileImageUrl}?w=56&h=56&fit=crop 1x, ${user.profileImageUrl}?w=112&h=112&fit=crop 2x` : undefined}
+                className="object-cover"
+                loading="lazy"
+                decoding="async"
+              />
               <AvatarFallback className="bg-primary text-primary-foreground font-bold">
                 {user?.firstName?.[0] || "U"}
               </AvatarFallback>

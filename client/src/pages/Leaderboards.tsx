@@ -47,7 +47,13 @@ function PodiumCard({ entry, position }: { entry: LeaderboardEntry; position: 1 
     <div className={`flex flex-col items-center ${position !== 1 ? "mt-4" : ""}`}>
       <div className="relative mb-2">
         <Avatar className="h-16 w-16 ring-2 ring-offset-2 ring-offset-background ring-primary">
-          <AvatarImage src={entry.user.profileImageUrl || undefined} className="object-cover" />
+          <AvatarImage 
+            src={entry.user.profileImageUrl ? `${entry.user.profileImageUrl}?w=64&h=64&fit=crop` : undefined}
+            srcSet={entry.user.profileImageUrl ? `${entry.user.profileImageUrl}?w=64&h=64&fit=crop 1x, ${entry.user.profileImageUrl}?w=128&h=128&fit=crop 2x` : undefined}
+            className="object-cover"
+            loading="lazy"
+            decoding="async"
+          />
           <AvatarFallback className="text-lg font-bold">
             {entry.user.firstName?.[0] || "U"}
           </AvatarFallback>
@@ -87,7 +93,13 @@ function LeaderboardRow({
         </span>
       </div>
       <Avatar className="h-10 w-10">
-        <AvatarImage src={entry.user.profileImageUrl || undefined} className="object-cover" />
+        <AvatarImage 
+          src={entry.user.profileImageUrl ? `${entry.user.profileImageUrl}?w=40&h=40&fit=crop` : undefined}
+          srcSet={entry.user.profileImageUrl ? `${entry.user.profileImageUrl}?w=40&h=40&fit=crop 1x, ${entry.user.profileImageUrl}?w=80&h=80&fit=crop 2x` : undefined}
+          className="object-cover"
+          loading="lazy"
+          decoding="async"
+        />
         <AvatarFallback>
           {entry.user.firstName?.[0] || "U"}
         </AvatarFallback>

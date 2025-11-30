@@ -68,7 +68,13 @@ function MentorCard({ mentor }: { mentor: Mentor }) {
         <div className="flex items-start gap-4">
           <div className="relative">
             <Avatar className="h-16 w-16">
-              <AvatarImage src={mentor.user.profileImageUrl || undefined} className="object-cover" />
+              <AvatarImage 
+                src={mentor.user.profileImageUrl ? `${mentor.user.profileImageUrl}?w=64&h=64&fit=crop` : undefined}
+                srcSet={mentor.user.profileImageUrl ? `${mentor.user.profileImageUrl}?w=64&h=64&fit=crop 1x, ${mentor.user.profileImageUrl}?w=128&h=128&fit=crop 2x` : undefined}
+                className="object-cover"
+                loading="lazy"
+                decoding="async"
+              />
               <AvatarFallback className="text-lg font-bold">
                 {mentor.user.firstName?.[0] || "M"}
               </AvatarFallback>
