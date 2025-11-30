@@ -16,12 +16,17 @@ export default function CourseDetail() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: course, isLoading } = useQuery<Course>({
+  const { data: course, isLoading: courseLoading, isError: courseError } = useQuery<Course>({
     queryKey: [`/api/courses/${courseId}`],
   });
 
   const { data: userCourse } = useQuery<UserCourse>({
     queryKey: [`/api/user/courses/${courseId}`],
+  });
+
+  const { data: generatedLessons, isLoading: lessonsLoading } = useQuery<Array<{ title: string; description: string }>>({
+    queryKey: [`/api/courses/${courseId}/lessons`],
+    enabled: !!courseId,
   });
 
   const startCourse = useMutation({
@@ -38,7 +43,7 @@ export default function CourseDetail() {
     },
   });
 
-  if (isLoading) {
+  if (courseLoading) {
     return (
       <div className="space-y-6 p-6">
         <Skeleton className="h-40 w-full" />
@@ -47,7 +52,7 @@ export default function CourseDetail() {
     );
   }
 
-  if (!course) {
+  if (courseError || !course) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 p-6">
         <h2 className="font-display text-2xl font-bold">Course not found</h2>
@@ -65,7 +70,7 @@ export default function CourseDetail() {
   const progress = userCourse?.progress || 0;
   const isCompleted = userCourse?.isCompleted || false;
 
-  const lessons = (course.lessons as any[]) || [];
+  const lessons = generatedLessons || [];
   const completedLessons = lessons.filter((_, i) => i < (progress / 100) * lessons.length);
 
   return (
@@ -163,13 +168,20 @@ export default function CourseDetail() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {lessons.length > 0 ? (
+              {lessonsLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-20 w-full" />
+                  ))}
+                </div>
+              ) : lessons.length > 0 ? (
                 lessons.map((lesson, index) => {
                   const isCompleted = index < completedLessons.length;
                   return (
                     <div
                       key={index}
                       className="flex items-center gap-4 p-4 rounded-lg border hover:bg-accent/50 transition-colors"
+                      data-testid={`lesson-item-${index}`}
                     >
                       <div className="flex-shrink-0">
                         {isCompleted ? (
@@ -191,7 +203,7 @@ export default function CourseDetail() {
                   );
                 })
               ) : (
-                <p className="text-muted-foreground text-center py-8">No lessons yet</p>
+                <p className="text-muted-foreground text-center py-8">No lessons available</p>
               )}
             </div>
           </CardContent>

@@ -299,6 +299,27 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/courses/:courseId/lessons", async (req, res) => {
+    if (!process.env.OPENAI_API_KEY) {
+      const defaultLessons = Array.from({ length: 12 }, (_, i) => ({
+        title: `Lesson ${i + 1}`,
+        description: "Learn key concepts and practical skills"
+      }));
+      return res.json(defaultLessons);
+    }
+    try {
+      const courses = await storage.getCourses();
+      const course = courses.find(c => c.id === req.params.courseId);
+      if (!course) return res.status(404).json({ error: "Course not found" });
+      
+      const { generateCourseLessons } = await import("./openai");
+      const lessons = await generateCourseLessons(course.title, course.description || "", 12);
+      res.json(lessons);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Messages
   app.get("/api/messages/conversations", async (req, res) => {
     if (!req.user) return res.status(401).json({ error: "Not authenticated" });
@@ -375,6 +396,27 @@ export async function registerRoutes(
       res.json(ur);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/roadmaps/:roadmapId/milestones", async (req, res) => {
+    if (!process.env.OPENAI_API_KEY) {
+      const defaultMilestones = Array.from({ length: 8 }, (_, i) => ({
+        title: `Phase ${i + 1}`,
+        description: "Master key concepts and practical applications"
+      }));
+      return res.json(defaultMilestones);
+    }
+    try {
+      const roadmaps = await storage.getRoadmaps();
+      const roadmap = roadmaps.find(r => r.id === req.params.roadmapId);
+      if (!roadmap) return res.status(404).json({ error: "Roadmap not found" });
+      
+      const { generateRoadmapMilestones } = await import("./openai");
+      const milestones = await generateRoadmapMilestones(roadmap.name, roadmap.description || "", 8);
+      res.json(milestones);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 

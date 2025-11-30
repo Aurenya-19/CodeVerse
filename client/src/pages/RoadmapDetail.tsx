@@ -25,12 +25,17 @@ export default function RoadmapDetail() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: roadmap, isLoading } = useQuery<Roadmap>({
+  const { data: roadmap, isLoading: roadmapLoading, isError: roadmapError } = useQuery<Roadmap>({
     queryKey: [`/api/roadmaps/${slug}`],
   });
 
   const { data: userRoadmap } = useQuery<UserRoadmap>({
     queryKey: [`/api/user/roadmaps/${slug}`],
+  });
+
+  const { data: generatedMilestones, isLoading: milestonesLoading } = useQuery<Array<{ title: string; description: string }>>({
+    queryKey: [`/api/roadmaps/${roadmap?.id}/milestones`],
+    enabled: !!roadmap?.id,
   });
 
   const startRoadmap = useMutation({
@@ -47,7 +52,7 @@ export default function RoadmapDetail() {
     },
   });
 
-  if (isLoading) {
+  if (roadmapLoading) {
     return (
       <div className="space-y-6 p-6">
         <Skeleton className="h-40 w-full" />
@@ -56,7 +61,7 @@ export default function RoadmapDetail() {
     );
   }
 
-  if (!roadmap) {
+  if (roadmapError || !roadmap) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 p-6">
         <h2 className="font-display text-2xl font-bold">Roadmap not found</h2>
@@ -71,7 +76,7 @@ export default function RoadmapDetail() {
   }
 
   const isStarted = !!userRoadmap;
-  const milestones = (roadmap.milestones as any[]) || [];
+  const milestones = generatedMilestones || [];
   const completedMilestones = new Set(userRoadmap?.completedMilestones || []);
   const currentMilestone = userRoadmap?.currentMilestone || 0;
   const completedCount = completedMilestones.size;
@@ -162,12 +167,21 @@ export default function RoadmapDetail() {
           <CardHeader>
             <CardTitle>Learning Milestones</CardTitle>
             <CardDescription>
-              {isStarted
+              {milestonesLoading 
+                ? "Loading milestones..." 
+                : isStarted
                 ? `${completedCount} completed, ${milestones.length - completedCount} remaining`
                 : `Complete ${milestones.length} milestones to finish this path`}
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {milestonesLoading ? (
+              <div className="space-y-6">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-24 w-full" />
+                ))}
+              </div>
+            ) : (
             <div className="space-y-6">
               {milestones.length > 0 ? (
                 milestones.map((milestone, index) => {
@@ -240,6 +254,7 @@ export default function RoadmapDetail() {
                 </p>
               )}
             </div>
+            )}
           </CardContent>
         </Card>
       </div>
