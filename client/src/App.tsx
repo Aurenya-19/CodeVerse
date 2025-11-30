@@ -16,6 +16,7 @@ import Landing from "@/pages/Landing";
 import Onboarding from "@/pages/Onboarding";
 import Dashboard from "@/pages/Dashboard";
 import Arenas from "@/pages/Arenas";
+import ArenaDetail from "@/pages/ArenaDetail";
 import Projects from "@/pages/Projects";
 import Clans from "@/pages/Clans";
 import Feed from "@/pages/Feed";
@@ -111,6 +112,9 @@ function Router() {
       </Route>
       <Route path="/arenas">
         <ProtectedRoute component={Arenas} />
+      </Route>
+      <Route path="/arenas/:slug">
+        <ProtectedRoute component={ArenaDetail} />
       </Route>
       <Route path="/projects">
         <ProtectedRoute component={Projects} />
