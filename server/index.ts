@@ -60,6 +60,13 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  const { seedDatabase } = await import("./seed");
+  try {
+    await seedDatabase();
+  } catch (err) {
+    console.log("Seed skipped or error:", err);
+  }
+
   const { setupAuth } = await import("./replitAuth");
   await setupAuth(app);
   await registerRoutes(httpServer, app);

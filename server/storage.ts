@@ -454,7 +454,8 @@ export class DatabaseStorage implements IStorage {
     }
 
     const conversations: { user: User; lastMessage: Message }[] = [];
-    for (const [otherUserId, lastMessage] of conversationMap) {
+    const entries = Array.from(conversationMap.entries());
+    for (const [otherUserId, lastMessage] of entries) {
       const user = await this.getUser(otherUserId);
       if (user) {
         conversations.push({ user, lastMessage });
