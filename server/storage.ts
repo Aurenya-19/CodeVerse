@@ -18,6 +18,7 @@ import {
   userRoadmaps,
   leaderboardEntries,
   aiChats,
+  userAvatars,
   type User,
   type UpsertUser,
   type UserProfile,
@@ -40,6 +41,8 @@ import {
   type Roadmap,
   type UserRoadmap,
   type AiChat,
+  type UserAvatar,
+  type InsertAvatar,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, and, or, like, sql, inArray } from "drizzle-orm";
@@ -130,6 +133,12 @@ export interface IStorage {
 
   // XP operations
   addXp(userId: string, amount: number): Promise<UserProfile | undefined>;
+
+  // Avatar operations
+  getUserAvatar(userId: string): Promise<UserAvatar | undefined>;
+  createAvatar(avatar: InsertAvatar): Promise<UserAvatar>;
+  updateAvatar(userId: string, updates: Partial<InsertAvatar>): Promise<UserAvatar | undefined>;
+  getMetaverseLeaderboard(): Promise<(UserAvatar & { user: User; profile: UserProfile })[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -610,6 +619,42 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return updated;
+  }
+
+  // Avatar operations for metaverse
+  async getUserAvatar(userId: string): Promise<UserAvatar | undefined> {
+    const [avatar] = await db.select().from(userAvatars).where(eq(userAvatars.userId, userId));
+    return avatar;
+  }
+
+  async createAvatar(avatar: InsertAvatar): Promise<UserAvatar> {
+    const [created] = await db.insert(userAvatars).values(avatar).returning();
+    return created;
+  }
+
+  async updateAvatar(userId: string, updates: Partial<InsertAvatar>): Promise<UserAvatar | undefined> {
+    const [updated] = await db
+      .update(userAvatars)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(userAvatars.userId, userId))
+      .returning();
+    return updated;
+  }
+
+  async getMetaverseLeaderboard(): Promise<(UserAvatar & { user: User; profile: UserProfile })[]> {
+    const results = await db
+      .select()
+      .from(userAvatars)
+      .innerJoin(users, eq(userAvatars.userId, users.id))
+      .innerJoin(userProfiles, eq(userAvatars.userId, userProfiles.userId))
+      .orderBy(desc(userProfiles.xp))
+      .limit(100);
+
+    return results.map((r) => ({
+      ...r.user_avatars,
+      user: r.users,
+      profile: r.user_profiles,
+    }));
   }
 }
 

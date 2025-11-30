@@ -31,6 +31,7 @@ import {
   Github,
   Zap,
   Globe,
+  Wand2,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -59,6 +60,10 @@ const socialNavItems = [
   { title: "Leaderboards", url: "/leaderboards", icon: Trophy },
   { title: "MentorVerse", url: "/mentors", icon: Users },
   { title: "Messages", url: "/messages", icon: MessageSquare },
+];
+
+const metaverseNavItems = [
+  { title: "Metaverse Hub", url: "/metaverse", icon: Wand2 },
 ];
 
 export function AppSidebar() {
@@ -140,6 +145,24 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {explorNavItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={location === item.url}>
+                    <Link href={item.url} data-testid={`nav-${item.title.toLowerCase().replace(/\s+/g, "-")}`}>
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Metaverse</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {metaverseNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={location === item.url}>
                     <Link href={item.url} data-testid={`nav-${item.title.toLowerCase().replace(/\s+/g, "-")}`}>
