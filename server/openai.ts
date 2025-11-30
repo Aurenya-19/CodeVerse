@@ -1,11 +1,10 @@
 import OpenAI from "openai";
 
-// The newest OpenAI model is "gpt-5" which was released August 7, 2025. Do not change unless explicitly requested.
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function explainCode(code: string): Promise<string> {
   const response = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: "gpt-4",
     messages: [
       {
         role: "system",
@@ -23,7 +22,7 @@ export async function explainCode(code: string): Promise<string> {
 
 export async function debugCode(code: string, error: string): Promise<string> {
   const response = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: "gpt-4",
     messages: [
       {
         role: "system",
@@ -41,7 +40,7 @@ export async function debugCode(code: string, error: string): Promise<string> {
 
 export async function generateLearningPath(topic: string, skillLevel: string): Promise<string> {
   const response = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: "gpt-4",
     messages: [
       {
         role: "system",
@@ -59,7 +58,7 @@ export async function generateLearningPath(topic: string, skillLevel: string): P
 
 export async function answerTechQuestion(question: string, context: string = ""): Promise<string> {
   const response = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: "gpt-4",
     messages: [
       {
         role: "system",
@@ -77,7 +76,7 @@ export async function answerTechQuestion(question: string, context: string = "")
 
 export async function generateProjectIdea(interests: string[], skillLevel: string): Promise<string> {
   const response = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: "gpt-4",
     messages: [
       {
         role: "system",
@@ -95,7 +94,7 @@ export async function generateProjectIdea(interests: string[], skillLevel: strin
 
 export async function generateQuizQuestion(topic: string, difficulty: string): Promise<{ question: string; options: string[]; correctAnswer: number }> {
   const response = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: "gpt-4",
     messages: [
       {
         role: "system",
@@ -106,7 +105,6 @@ export async function generateQuizQuestion(topic: string, difficulty: string): P
         content: `Generate a ${difficulty} difficulty quiz question about ${topic}. Return only valid JSON.`,
       },
     ],
-    response_format: { type: "json_object" },
   });
 
   try {
@@ -121,80 +119,91 @@ export async function generateQuizQuestion(topic: string, difficulty: string): P
 }
 
 export async function generateCourseLessons(courseTitle: string, courseDescription: string, numLessons: number = 10): Promise<Array<{ title: string; description: string }>> {
-  const response = await openai.chat.completions.create({
-    model: "gpt-5",
-    messages: [
-      {
-        role: "system",
-        content: "You are an expert course curriculum designer. Generate detailed, practical lesson outlines for tech courses. Return ONLY a JSON array of lesson objects with no markdown, no extra text.",
-      },
-      {
-        role: "user",
-        content: `Create ${numLessons} detailed lessons for this course:
-Title: ${courseTitle}
-Description: ${courseDescription}
-
-Return ONLY valid JSON array like: [{"title": "Lesson Title", "description": "What students will learn"}]
-Each description should be 1-2 sentences explaining the learning objectives. NO MARKDOWN, NO EXTRA TEXT.`,
-      },
-    ],
-    response_format: { type: "json_object" },
-  });
-
   try {
-    const content = response.choices[0].message.content || "[]";
-    // Handle both array and object response formats
-    let lessonsData = Array.isArray(content) ? content : JSON.parse(content);
-    if (!Array.isArray(lessonsData)) {
-      lessonsData = lessonsData.lessons || [];
-    }
-    return lessonsData.slice(0, numLessons).map((l: any) => ({
-      title: l.title || "Untitled Lesson",
-      description: l.description || "Learn this topic",
-    }));
-  } catch {
+    const response = await Promise.race([
+      openai.chat.completions.create({
+        model: "gpt-4",
+        max_tokens: 1500,
+        messages: [
+          {
+            role: "system",
+            content: "You are a course designer. Generate lesson titles and descriptions as a simple text list. Format: Lesson Title|Short description",
+          },
+          {
+            role: "user",
+            content: `Create ${numLessons} lessons for "${courseTitle}". 
+${courseDescription ? `Course overview: ${courseDescription}` : ""}
+Format each lesson as: Lesson Title|What students will learn
+One lesson per line.`,
+          },
+        ],
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 15000)),
+    ]);
+
+    const content = response.choices[0].message.content || "";
+    const lines = content.split("\n").filter((line) => line.trim());
+
+    return lines
+      .slice(0, numLessons)
+      .map((line) => {
+        const [title, description] = line.split("|").map((s) => s.trim());
+        return {
+          title: title || "Lesson",
+          description: description || "Learn key concepts",
+        };
+      })
+      .filter((lesson) => lesson.title !== "");
+  } catch (error) {
+    console.error("Course lessons generation failed:", error);
     return Array.from({ length: numLessons }, (_, i) => ({
       title: `${courseTitle} - Lesson ${i + 1}`,
-      description: `Master key concepts and practical skills in this lesson`,
+      description: "Master key concepts and practical skills",
     }));
   }
 }
 
 export async function generateRoadmapMilestones(roadmapName: string, roadmapDescription: string, numMilestones: number = 8): Promise<Array<{ title: string; description: string }>> {
-  const response = await openai.chat.completions.create({
-    model: "gpt-5",
-    messages: [
-      {
-        role: "system",
-        content: "You are an expert learning path designer. Generate clear milestone objectives for learning roadmaps. Return ONLY a JSON array of milestone objects with no markdown, no extra text.",
-      },
-      {
-        role: "user",
-        content: `Create ${numMilestones} learning milestones for this roadmap:
-Name: ${roadmapName}
-Description: ${roadmapDescription}
-
-Return ONLY valid JSON array like: [{"title": "Milestone Name", "description": "What you'll accomplish"}]
-Each description should be 1-2 sentences about the milestone's learning outcomes. NO MARKDOWN, NO EXTRA TEXT.`,
-      },
-    ],
-    response_format: { type: "json_object" },
-  });
-
   try {
-    const content = response.choices[0].message.content || "[]";
-    let milestonesData = Array.isArray(content) ? content : JSON.parse(content);
-    if (!Array.isArray(milestonesData)) {
-      milestonesData = milestonesData.milestones || [];
-    }
-    return milestonesData.slice(0, numMilestones).map((m: any) => ({
-      title: m.title || "Untitled Milestone",
-      description: m.description || "Complete this milestone",
-    }));
-  } catch {
+    const response = await Promise.race([
+      openai.chat.completions.create({
+        model: "gpt-4",
+        max_tokens: 1200,
+        messages: [
+          {
+            role: "system",
+            content: "You are a roadmap designer. Generate milestone titles and descriptions as a simple text list. Format: Milestone Title|Short description",
+          },
+          {
+            role: "user",
+            content: `Create ${numMilestones} learning milestones for the "${roadmapName}" roadmap.
+${roadmapDescription ? `Overview: ${roadmapDescription}` : ""}
+Format each milestone as: Milestone Title|What you'll accomplish
+One milestone per line. Make them progressively harder.`,
+          },
+        ],
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 15000)),
+    ]);
+
+    const content = response.choices[0].message.content || "";
+    const lines = content.split("\n").filter((line) => line.trim());
+
+    return lines
+      .slice(0, numMilestones)
+      .map((line) => {
+        const [title, description] = line.split("|").map((s) => s.trim());
+        return {
+          title: title || "Milestone",
+          description: description || "Complete this milestone",
+        };
+      })
+      .filter((milestone) => milestone.title !== "");
+  } catch (error) {
+    console.error("Roadmap milestones generation failed:", error);
     return Array.from({ length: numMilestones }, (_, i) => ({
       title: `${roadmapName} - Phase ${i + 1}`,
-      description: `Progress through advanced concepts and practical applications`,
+      description: "Progress through advanced concepts",
     }));
   }
 }
@@ -216,7 +225,7 @@ export async function chatWithCopilot(message: string, history: Array<{ role: st
   ];
 
   const response = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: "gpt-4",
     messages,
     max_completion_tokens: 1024,
   });
