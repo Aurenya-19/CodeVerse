@@ -333,11 +333,13 @@ export async function registerRoutes(
     res.json(feed);
   });
 
-  // Tech Resources - Niche Technologies
+  // Tech Resources - Niche Technologies with pagination
   app.get("/api/tech-resources", async (req, res) => {
     try {
       const { getTechResources } = await import("./resources");
-      res.json(await getTechResources());
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = Math.min(parseInt(req.query.limit as string) || 10, 100);
+      res.json(await getTechResources(page, limit));
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }

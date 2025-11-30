@@ -169,11 +169,26 @@ export const techResources = {
   },
 };
 
-export async function getTechResources() {
+export async function getTechResources(page: number = 1, limit: number = 10) {
+  const resourceEntries = Object.entries(techResources);
+  const total = resourceEntries.length;
+  const start = (page - 1) * limit;
+  const end = start + limit;
+  const paginatedEntries = resourceEntries.slice(start, end);
+  
+  const paginatedResources = Object.fromEntries(paginatedEntries);
+  
   return {
-    resources: techResources,
-    total: Object.keys(techResources).length,
-    raretechCount: Object.keys(techResources).length - 8,
+    resources: paginatedResources,
+    total,
+    page,
+    limit,
+    pages: Math.ceil(total / limit),
+    hasNextPage: end < total,
+    hasPrevPage: page > 1,
+    raretechCount: resourceEntries.filter(([key]) => 
+      !["ai", "web", "mobile", "cybersecurity", "blockchain", "devops", "gamedev", "iot"].includes(key)
+    ).length,
   };
 }
 

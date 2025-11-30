@@ -23,9 +23,14 @@ interface TechResource {
 
 export default function Resources() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
   
   const { data: techData, isLoading } = useQuery({
-    queryKey: ["/api/tech-resources"],
+    queryKey: ["/api/tech-resources", page],
+    queryFn: async () => {
+      const response = await fetch(`/api/tech-resources?page=${page}&limit=10`);
+      return response.json();
+    },
   });
 
   const resources: Record<string, TechResource> = techData?.resources || {};
