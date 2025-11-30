@@ -44,24 +44,40 @@ async function upsertUser(profile: any) {
   });
 }
 
+// Helper function to get callback URL from request
+function getCallbackURL(req?: any): string {
+  if (process.env.NODE_ENV === 'production') {
+    // Try explicit config first
+    if (process.env.GOOGLE_CALLBACK_URL) {
+      return process.env.GOOGLE_CALLBACK_URL;
+    }
+    // Try PUBLIC_URL env var
+    if (process.env.PUBLIC_URL) {
+      return `https://${process.env.PUBLIC_URL}/api/callback`;
+    }
+    // Fallback: use request host if available
+    if (req && req.get) {
+      const host = req.get('host');
+      const protocol = req.protocol || 'https';
+      return `${protocol}://${host}/api/callback`;
+    }
+    // Last resort
+    return 'https://techhive-hju8.onrender.com/api/callback';
+  } else {
+    // Development
+    return `http://localhost:5000/api/callback`;
+  }
+}
+
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   app.use(getSession());
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Determine callback URL based on environment
-  let callbackURL: string;
-  
-  if (process.env.NODE_ENV === 'production') {
-    // In production, use the explicitly configured URL
-    callbackURL = process.env.GOOGLE_CALLBACK_URL || `https://${process.env.PUBLIC_URL}/api/callback`;
-  } else {
-    // In development, use HTTP (not HTTPS) for localhost - Google requires this
-    callbackURL = `http://localhost:5000/api/callback`;
-  }
-
-  console.log(`[Auth] Google OAuth configured with callback URL: ${callbackURL}`);
+  // Get initial callback URL for logging
+  const initialCallbackURL = getCallbackURL();
+  console.log(`[Auth] Google OAuth configured with callback URL: ${initialCallbackURL}`);
 
   // Ensure we have credentials
   const clientID = process.env.GOOGLE_CLIENT_ID;
@@ -75,16 +91,16 @@ export async function setupAuth(app: Express) {
     throw new Error('Google OAuth credentials not found in environment');
   }
 
-  // Google OAuth Strategy
+  // Google OAuth Strategy - use dynamic callback URL
   passport.use(
     new GoogleStrategy(
       {
         clientID,
         clientSecret,
-        callbackURL,
-        passReqToCallback: false,
+        callbackURL: initialCallbackURL,
+        passReqToCallback: true,
       },
-      async (accessToken: string, refreshToken: string, profile: any, done: any) => {
+      async (req: any, accessToken: string, refreshToken: string, profile: any, done: any) => {
         try {
           console.log(`[Auth] Google user logged in: ${profile.email}`);
           await upsertUser(profile);
