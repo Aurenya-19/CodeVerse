@@ -134,13 +134,26 @@ const periods = [
   { value: "weekly", label: "This Week" },
 ];
 
+const arenas = [
+  { value: "global", label: "Global Rankings" },
+  { value: "ai", label: "AI & Machine Learning" },
+  { value: "web", label: "Web Development" },
+  { value: "mobile", label: "Mobile Development" },
+  { value: "cybersecurity", label: "Cybersecurity" },
+  { value: "blockchain", label: "Blockchain & Web3" },
+  { value: "devops", label: "DevOps & Cloud" },
+  { value: "gamedev", label: "Game Development" },
+  { value: "biotech", label: "Biotech & Bioinformatics" },
+];
+
 export default function Leaderboards() {
+  const [arena, setArena] = useState("global");
   const [category, setCategory] = useState("xp");
   const [period, setPeriod] = useState("all_time");
   const { user } = useAuth();
 
   const { data: leaderboard, isLoading } = useQuery<LeaderboardEntry[]>({
-    queryKey: ["/api/leaderboard", category, period],
+    queryKey: ["/api/leaderboard", arena, category, period],
   });
 
   const topThree = leaderboard?.slice(0, 3) || [];
@@ -167,37 +180,58 @@ export default function Leaderboards() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-display text-3xl font-bold">Leaderboards</h1>
-          <p className="mt-1 text-muted-foreground">
-            Compete with developers worldwide
-          </p>
+      <div className="space-y-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="font-display text-3xl font-bold">Leaderboards</h1>
+            <p className="mt-1 text-muted-foreground">
+              Compete with developers worldwide
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="w-40" data-testid="select-leaderboard-category">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    <div className="flex items-center gap-2">
+                      <cat.icon className="h-4 w-4" />
+                      {cat.label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={period} onValueChange={setPeriod}>
+              <SelectTrigger className="w-32" data-testid="select-leaderboard-period">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {periods.map((p) => (
+                  <SelectItem key={p.value} value={p.value}>
+                    {p.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="w-40" data-testid="select-leaderboard-category">
+        
+        <div>
+          <p className="text-sm font-medium mb-2 text-muted-foreground flex items-center gap-2">
+            <Globe className="h-4 w-4" />
+            View Leaderboard By Arena
+          </p>
+          <Select value={arena} onValueChange={setArena}>
+            <SelectTrigger className="w-full sm:w-64" data-testid="select-leaderboard-arena">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {categories.map((cat) => (
-                <SelectItem key={cat.value} value={cat.value}>
-                  <div className="flex items-center gap-2">
-                    <cat.icon className="h-4 w-4" />
-                    {cat.label}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-32" data-testid="select-leaderboard-period">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {periods.map((p) => (
-                <SelectItem key={p.value} value={p.value}>
-                  {p.label}
+              {arenas.map((a) => (
+                <SelectItem key={a.value} value={a.value}>
+                  {a.label}
                 </SelectItem>
               ))}
             </SelectContent>
