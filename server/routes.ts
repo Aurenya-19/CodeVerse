@@ -523,33 +523,42 @@ export async function registerRoutes(
   app.post("/api/ai/chat", async (req, res) => {
     try {
       const { message, history, action } = req.body;
+      if (!message) return res.status(400).json({ error: "Message required" });
+      
       let response: string;
 
-      console.log("[CodeMentor] Chat request:", message.substring(0, 50));
-
       // Always use the self-contained AI engine
-      const { chatWithCopilot, explainCode, debugCode, generateLearningPath, answerTechQuestion, generateProjectIdea } = await import("./openai");
+      const { chatWithCopilot } = await import("./openai");
 
       if (action === "explain_code") {
+        const { explainCode } = await import("./openai");
         response = await explainCode(message);
       } else if (action === "debug_code") {
+        const { debugCode } = await import("./openai");
         const { code, error } = JSON.parse(message);
         response = await debugCode(code, error);
       } else if (action === "learning_path") {
+        const { generateLearningPath } = await import("./openai");
         const { topic, skillLevel } = JSON.parse(message);
         response = await generateLearningPath(topic, skillLevel);
-      } else if (action === "project_idea") {
-        const { interests, skillLevel } = JSON.parse(message);
-        response = await generateProjectIdea(interests, skillLevel);
       } else {
-        console.log("[CodeMentor] Using chatWithCopilot for message");
         response = await chatWithCopilot(message, history || []);
-        console.log("[CodeMentor] Response length:", response.length, "First 100:", response.substring(0, 100));
       }
 
-      res.json({ response });
+      return res.json({ response });
     } catch (error: any) {
-      console.error("[CodeMentor] Error:", error.message);
+      return res.status(400).json({ error: error.message });
+    }
+  });
+
+  // SIMPLE TEST - Just AI, nothing else
+  app.get("/api/test-ai/:question", async (req, res) => {
+    try {
+      const question = decodeURIComponent(req.params.question);
+      const { chatWithCopilot } = await import("./openai");
+      const response = await chatWithCopilot(question, []);
+      res.json({ question, response });
+    } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
   });
