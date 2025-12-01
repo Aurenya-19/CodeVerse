@@ -108,7 +108,9 @@ export default function CodeMentor() {
       setInput("");
     },
     onSuccess: (data: any) => {
+      console.log("[CodeMentor Frontend] Response received:", data);
       const responseText = data.response || "I'm here to help! What else would you like to learn?";
+      console.log("[CodeMentor Frontend] Response text:", responseText.substring(0, 100));
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: responseText },
