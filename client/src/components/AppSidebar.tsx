@@ -62,8 +62,9 @@ const socialNavItems = [
   { title: "Messages", url: "/messages", icon: MessageSquare },
 ];
 
-const metaverseNavItems = [
+const devToolsNavItems = [
   { title: "Metaverse Hub", url: "/metaverse", icon: Wand2 },
+  { title: "CodeFusion", url: "/codefusion", icon: Zap },
 ];
 
 export function AppSidebar() {
@@ -159,10 +160,10 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Metaverse</SidebarGroupLabel>
+          <SidebarGroupLabel>Dev Tools & Metaverse</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {metaverseNavItems.map((item) => (
+              {devToolsNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={location === item.url}>
                     <Link href={item.url} data-testid={`nav-${item.title.toLowerCase().replace(/\s+/g, "-")}`}>

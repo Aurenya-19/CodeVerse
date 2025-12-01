@@ -199,6 +199,9 @@ function Router() {
       <Route path="/metaverse">
         <ProtectedRoute component={Metaverse} />
       </Route>
+      <Route path="/codefusion">
+        <ProtectedRoute component={CodeFusion} />
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
