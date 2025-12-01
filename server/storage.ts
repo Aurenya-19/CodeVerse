@@ -427,6 +427,10 @@ export class DatabaseStorage implements IStorage {
   async getSolutionSubmissions(userId: string, limit = 50): Promise<SolutionSubmission[]> {
     return db.select().from(solutionSubmissions).where(eq(solutionSubmissions.userId, userId)).limit(limit);
   }
+
+  async getDailyChallenges(limit = 10): Promise<Challenge[]> {
+    return db.select().from(challenges).limit(limit).orderBy(desc(challenges.createdAt));
+  }
 }
 
 export const storage = new DatabaseStorage();
