@@ -144,7 +144,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getQuestsByArena(arenaId: string): Promise<Quest[]> {
-    return db.select().from(quests).where(eq(quests.arenaId, arenaId));
+    return db.select().from(quests).where(eq(quests.type, arenaId)).limit(20);
   }
 
   async getCourses(limit = 20): Promise<Course[]> {
@@ -221,7 +221,12 @@ export class DatabaseStorage implements IStorage {
   async addXp(userId: string, xp: number): Promise<UserProfile | undefined> {
     const profile = await this.getUserProfile(userId);
     if (!profile) return undefined;
-    return this.upsertUserProfile({ ...profile, userId, xp: (profile.xp || 0) + xp });
+    const newXp = (profile.xp || 0) + xp;
+    return this.upsertUserProfile({ 
+      userId, 
+      xp: newXp,
+      level: Math.floor(newXp / 1000) + 1
+    } as any);
   }
 
   async assignQuest(userId: string, questId: string, target: number = 1): Promise<UserQuest> {
@@ -263,7 +268,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getConversations(userId: string, limit = 50): Promise<Message[]> {
-    return db.select().from(messages).where(or(eq(messages.senderId, userId), eq(messages.recipientId, userId))).limit(limit).orderBy(desc(messages.createdAt));
+    const msgs = await db.select().from(messages).where(or(eq(messages.senderId, userId), eq(messages.receiverId, userId))).limit(limit).orderBy(desc(messages.createdAt));
+    return msgs as Message[];
   }
 
   async getDailyChallenges(): Promise<Challenge[]> {
@@ -279,7 +285,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMessages(userId: string, limit = 50): Promise<Message[]> {
-    return db.select().from(messages).where(or(eq(messages.senderId, userId), eq(messages.recipientId, userId))).limit(limit).orderBy(desc(messages.createdAt));
+    const msgs = await db.select().from(messages).where(or(eq(messages.senderId, userId), eq(messages.receiverId, userId))).limit(limit).orderBy(desc(messages.createdAt));
+    return msgs as Message[];
   }
 
   async getMetaverseLeaderboard(limit = 100): Promise<any[]> {
@@ -344,8 +351,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async sendMessage(from: string, to: string, content: string): Promise<Message> {
-    const [msg] = await db.insert(messages).values({ senderId: from, recipientId: to, content, isRead: false }).returning();
-    return msg;
+    const [msg] = await db.insert(messages).values({ senderId: from, receiverId: to, content, isRead: false } as any).returning();
+    return msg as Message;
   }
 
   async startChallenge(userId: string, challengeId: string): Promise<UserChallenge> {
@@ -359,8 +366,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async startRoadmap(userId: string, roadmapId: string): Promise<UserRoadmap> {
-    const [ur] = await db.insert(userRoadmaps).values({ userId, roadmapId, progress: 0, isCompleted: false }).returning();
-    return ur;
+    const [ur] = await db.insert(userRoadmaps).values({ userId, roadmapId, currentMilestone: 0 } as any).returning();
+    return ur as UserRoadmap;
   }
 
   async submitChallenge(userId: string, challengeId: string, code: string, score: number): Promise<UserChallenge> {
