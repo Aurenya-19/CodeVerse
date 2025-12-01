@@ -282,12 +282,20 @@ export async function chatWithCopilot(
   _history: Array<{ role: string; content: string }> = []
 ): Promise<string> {
   try {
+    console.log("[CodeMentor] ===== NEW REQUEST =====");
+    console.log("[CodeMentor] Message:", message.substring(0, 100));
+    
     const type = detectQuestionType(message);
+    console.log("[CodeMentor] DETECTED TYPE:", type);
+    
     const response = buildResponse(type, message);
-    console.log(`[CodeMentor] Detected: ${type}`);
+    console.log("[CodeMentor] Response length:", response.length);
+    console.log("[CodeMentor] First 100 chars:", response.substring(0, 100));
+    console.log("[CodeMentor] ===== END REQUEST =====");
+    
     return response;
   } catch (error: any) {
-    console.error("[CodeMentor] Error:", error?.message);
+    console.error("[CodeMentor] CRITICAL ERROR:", error?.message);
     return `🚀 **CODEMENTOR AI**\n\nAsk me about debugging, learning concepts, algorithms, optimization, or system design!`;
   }
 }
