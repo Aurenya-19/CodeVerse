@@ -20,6 +20,8 @@ import {
   aiChats,
   userAvatars,
   codeFusions,
+  solutionSubmissions,
+  learningReports,
   type User,
   type UpsertUser,
   type UserProfile,
@@ -46,6 +48,8 @@ import {
   type InsertAvatar,
   type CodeFusion,
   type InsertCodeFusion,
+  type SolutionSubmission,
+  type LearningReport,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, and, or, like, sql, inArray } from "drizzle-orm";

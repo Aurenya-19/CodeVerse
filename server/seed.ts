@@ -4,6 +4,8 @@ import {
   feedItems, roadmaps 
 } from "@shared/schema";
 
+import { seedMassiveContent } from "./seed-massive";
+
 export async function seedDatabase() {
   try {
     console.log("Starting database seed...");
@@ -568,6 +570,7 @@ export async function seedDatabase() {
       },
     ]).onConflictDoNothing();
 
+    await seedMassiveContent();
     console.log("Database seeded successfully with 17 arenas + 80+ challenges + 30+ quests + 20+ courses!");
   } catch (error) {
     console.error("Error seeding database:", error);
