@@ -1724,3 +1724,62 @@ export async function registerRoutes(
 
   return httpServer;
 }
+
+  // ===== COMPETITIONS ROUTES =====
+  app.get("/api/competitions", async (req, res) => {
+    try {
+      const competitions = await storage.getCompetitions();
+      res.json(competitions);
+    } catch (error: any) {
+      res.status(400).json(formatErrorResponse(error));
+    }
+  });
+
+  app.get("/api/competitions/:id", async (req, res) => {
+    try {
+      const competition = await storage.getCompetition(req.params.id);
+      if (!competition) return res.status(404).json({ error: "Competition not found" });
+      res.json(competition);
+    } catch (error: any) {
+      res.status(400).json(formatErrorResponse(error));
+    }
+  });
+
+  app.post("/api/competitions/:id/join", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const joined = await storage.joinCompetition(req.params.id, req.user.id);
+      res.json({ success: true, joined });
+    } catch (error: any) {
+      res.status(400).json(formatErrorResponse(error));
+    }
+  });
+
+  app.post("/api/competitions/:id/submit", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { code, description, approach } = req.body;
+      const submission = await storage.submitCompetitionSolution({
+        competitionId: req.params.id,
+        userId: req.user.id,
+        code,
+        description,
+        approach,
+        score: 0,
+        status: "pending"
+      });
+      res.json({ success: true, submission });
+    } catch (error: any) {
+      res.status(400).json(formatErrorResponse(error));
+    }
+  });
+
+  app.get("/api/competitions/:id/leaderboard", async (req, res) => {
+    try {
+      const leaderboard = await storage.getCompetitionLeaderboard(req.params.id);
+      res.json(leaderboard);
+    } catch (error: any) {
+      res.status(400).json(formatErrorResponse(error));
+    }
+  });
+

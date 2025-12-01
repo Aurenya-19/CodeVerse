@@ -205,6 +205,15 @@ function Router() {
       <Route path="/codefusion">
         <ProtectedRoute component={CodeFusion} />
       </Route>
+      <Route path="/competitions">
+        <ProtectedRoute component={Competitions} />
+      </Route>
+      <Route path="/competitions/:id">
+        <ProtectedRoute component={CompetitionDetail} />
+      </Route>
+      <Route path="/competitions/:id/leaderboard">
+        <ProtectedRoute component={CompetitionLeaderboard} />
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
