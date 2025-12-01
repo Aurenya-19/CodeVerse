@@ -344,19 +344,14 @@ export async function registerRoutes(
 
   app.get("/api/messages/:userId", async (req, res) => {
     if (!req.user) return res.status(401).json({ error: "Not authenticated" });
-    const messages = await storage.getMessages(req.user.id, req.params.userId);
-    await storage.markMessagesRead(req.user.id, req.params.userId);
+    const messages = await storage.getMessages(req.user.id);
     res.json(messages);
   });
 
   app.post("/api/messages", async (req, res) => {
     if (!req.user) return res.status(401).json({ error: "Not authenticated" });
     try {
-      const message = await storage.sendMessage({
-        senderId: req.user.id,
-        receiverId: req.body.receiverId,
-        content: req.body.content,
-      });
+      const message = await storage.sendMessage(req.user.id, req.body.receiverId, req.body.content);
       res.json(message);
     } catch (error: any) {
       res.status(400).json(formatErrorResponse(error));
@@ -450,10 +445,8 @@ export async function registerRoutes(
   // Leaderboard with multiple categories
   app.get("/api/leaderboard", async (req, res) => {
     try {
-      const category = req.query.category as string || "xp";
-      const period = req.query.period as string || "all_time";
       const limit = parseInt(req.query.limit as string) || 100;
-      const leaderboard = await storage.getLeaderboard(category, period, limit);
+      const leaderboard = await storage.getLeaderboard(limit);
       res.json(leaderboard);
     } catch (error: any) {
       res.status(400).json(formatErrorResponse(error));
@@ -463,8 +456,8 @@ export async function registerRoutes(
   // Get user's leaderboard position
   app.get("/api/leaderboard/rank/:userId", async (req, res) => {
     try {
-      const leaderboard = await storage.getLeaderboard("xp", "all_time", 1000);
-      const rank = leaderboard.find(entry => entry.user.id === req.params.userId);
+      const leaderboard = await storage.getLeaderboard(1000);
+      const rank = leaderboard.find((entry: any) => entry.userId === req.params.userId);
       res.json(rank || { error: "User not found" });
     } catch (error: any) {
       res.status(400).json(formatErrorResponse(error));
@@ -1472,13 +1465,11 @@ export async function registerRoutes(
     }
   });
 
-  return httpServer;
-
   // === COMMUNITY FEATURE 1: LEVEL 3+ REQUIRED ===
   app.post("/api/communities/create", async (req, res) => {
     if (!req.user) return res.status(401).json(formatErrorResponse({ message: "Not authenticated" }));
     const userProfile = await storage.getUserProfile(req.user.id);
-    if (!userProfile || userProfile.level < 3) return res.status(403).json(formatErrorResponse({ message: "Level 3+ required" }));
+    if (!userProfile || (userProfile.level ?? 1) < 3) return res.status(403).json(formatErrorResponse({ message: "Level 3+ required" }));
     const group = await storage.createGroup({ ...req.body, creatorId: req.user.id, minLevel: 3 });
     await storage.joinGroup(group.id, req.user.id);
     res.json({ success: true, group });
@@ -1495,7 +1486,7 @@ export async function registerRoutes(
   app.get("/api/advanced-challenges", async (req, res) => {
     if (!req.user) return res.status(401).json(formatErrorResponse({ message: "Not authenticated" }));
     const userProfile = await storage.getUserProfile(req.user.id);
-    if (!userProfile || userProfile.level < 5) return res.status(403).json(formatErrorResponse({ message: "Level 5+ required" }));
+    if (!userProfile || (userProfile.level ?? 1) < 5) return res.status(403).json(formatErrorResponse({ message: "Level 5+ required" }));
     const challenges = await storage.getAdvancedChallenges();
     res.json({ challenges, minLevel: 5 });
   });
