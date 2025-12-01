@@ -116,9 +116,11 @@ export async function chatWithCopilot(
   history: Array<{ role: string; content: string }> = []
 ): Promise<string> {
   try {
+    console.log("[CodeMentor AI] HAS_GROQ:", HAS_GROQ, "Message:", message.substring(0, 50));
+    
     // If no Groq API key, use fallback
     if (!HAS_GROQ) {
-      console.log("Groq API not available, using fallback responses");
+      console.log("[CodeMentor AI] Using fallback - No Groq API key");
       return generateFallbackResponse(message);
     }
 
@@ -130,6 +132,8 @@ export async function chatWithCopilot(
       })),
       { role: "user" as const, content: message },
     ];
+
+    console.log("[CodeMentor AI] Calling Groq with messages:", messages.length);
 
     // Call Groq API for real LLM reasoning
     const response = await groq.chat.completions.create({
@@ -144,15 +148,21 @@ export async function chatWithCopilot(
       stream: false,
     });
 
+    console.log("[CodeMentor AI] Groq response received");
+    
     const content = response.choices[0]?.message?.content || "";
     if (!content) {
+      console.log("[CodeMentor AI] Empty Groq response, using fallback");
       return generateFallbackResponse(message);
     }
 
+    console.log("[CodeMentor AI] Returning Groq response:", content.substring(0, 100));
     return content;
   } catch (error: any) {
-    console.error("Groq API error:", error?.message);
+    console.error("[CodeMentor AI] Groq API error:", error?.message || JSON.stringify(error));
+    console.error("[CodeMentor AI] Stack:", error?.stack);
     // Fall back to template responses on API error
+    console.log("[CodeMentor AI] Using fallback due to error");
     return generateFallbackResponse(message);
   }
 }
