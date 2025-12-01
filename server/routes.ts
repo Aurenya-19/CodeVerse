@@ -1723,13 +1723,12 @@ export async function registerRoutes(
   });
 
   return httpServer;
-}
 
   // ===== COMPETITIONS ROUTES =====
   app.get("/api/competitions", async (req, res) => {
     try {
-      const competitions = await storage.getCompetitions();
-      res.json(competitions);
+      const comps = await storage.getCompetitions();
+      res.json(comps);
     } catch (error: any) {
       res.status(400).json(formatErrorResponse(error));
     }
@@ -1737,9 +1736,9 @@ export async function registerRoutes(
 
   app.get("/api/competitions/:id", async (req, res) => {
     try {
-      const competition = await storage.getCompetition(req.params.id);
-      if (!competition) return res.status(404).json({ error: "Competition not found" });
-      res.json(competition);
+      const comp = await storage.getCompetition(req.params.id);
+      if (!comp) return res.status(404).json({ error: "Competition not found" });
+      res.json(comp);
     } catch (error: any) {
       res.status(400).json(formatErrorResponse(error));
     }
@@ -1758,15 +1757,12 @@ export async function registerRoutes(
   app.post("/api/competitions/:id/submit", async (req, res) => {
     if (!req.user) return res.status(401).json({ error: "Not authenticated" });
     try {
-      const { code, description, approach } = req.body;
       const submission = await storage.submitCompetitionSolution({
         competitionId: req.params.id,
         userId: req.user.id,
-        code,
-        description,
-        approach,
-        score: 0,
-        status: "pending"
+        code: req.body.code,
+        description: req.body.description,
+        approach: req.body.approach
       });
       res.json({ success: true, submission });
     } catch (error: any) {
@@ -1783,3 +1779,5 @@ export async function registerRoutes(
     }
   });
 
+  return httpServer;
+}
