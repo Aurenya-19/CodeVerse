@@ -224,9 +224,14 @@ export class DatabaseStorage implements IStorage {
     return this.upsertUserProfile({ ...profile, userId, xp: (profile.xp || 0) + xp });
   }
 
-  async assignQuest(userId: string, questId: string): Promise<UserQuest> {
-    const [quest] = await db.insert(userQuests).values({ userId, questId, progress: 0, isCompleted: false }).returning();
+  async assignQuest(userId: string, questId: string, target: number = 1): Promise<UserQuest> {
+    const [quest] = await db.insert(userQuests).values({ userId, questId, progress: 0, isCompleted: false, target }).returning();
     return quest;
+  }
+
+  async createAvatar(avatar: any): Promise<UserAvatar> {
+    const [created] = await db.insert(userAvatars).values(avatar).returning();
+    return created;
   }
 
   async createClan(clan: any): Promise<Clan> {

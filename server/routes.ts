@@ -1,9 +1,10 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertUserProfileSchema } from "@shared/schema";
+import { insertUserSchema, insertUserProfileSchema, privateGroups } from "@shared/schema";
 import { z } from "zod";
 import { formatErrorResponse } from "./errorHandler";
+import { db } from "./db";
 
 declare global {
   namespace Express {
@@ -119,14 +120,15 @@ export async function registerRoutes(
     try {
       const { cacheManager } = await import("./cache");
       const arenaId = req.query.arenaId as string | undefined;
-      const cacheKey = arenaId ? `arena_${arenaId}` : "all";
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+      const offset = parseInt(req.query.offset as string) || 0;
       
       let challenges = arenaId 
-        ? await storage.getChallenges(arenaId)
-        : await storage.getChallenges();
+        ? await storage.getChallenges(limit)
+        : await storage.getChallenges(limit);
       
       res.set("Cache-Control", "public, max-age=300");
-      res.json(challenges);
+      res.json(challenges.slice(offset, offset + limit));
     } catch (error: any) {
       res.status(400).json(formatErrorResponse(error));
     }
@@ -164,7 +166,7 @@ export async function registerRoutes(
           achievement: {
             title: `${challenge?.title} Mastered!`,
             xpEarned: score,
-            newLevel: profile?.level,
+            newLevel: profile?.level ?? 1,
             badge: "challenge_completed"
           }
         });
@@ -271,7 +273,8 @@ export async function registerRoutes(
   app.post("/api/quests/:questId/start", async (req, res) => {
     if (!req.user) return res.status(401).json({ error: "Not authenticated" });
     try {
-      const uq = await storage.assignQuest(req.user.id, req.params.questId, req.body.target || 1);
+      const target = Math.max(1, Math.floor(req.body.target || 1));
+      const uq = await storage.assignQuest(req.user.id, req.params.questId, target);
       res.json(uq);
     } catch (error: any) {
       res.status(400).json(formatErrorResponse(error));
@@ -1353,8 +1356,7 @@ export async function registerRoutes(
   app.post("/api/avatar/create", async (req, res) => {
     if (!req.user) return res.status(401).json({ error: "Not authenticated" });
     try {
-      const avatar = await storage.createAvatar({
-        userId: req.user.id,
+      const avatar = await storage.updateAvatar(req.user.id, {
         skinTone: req.body.skinTone || "default",
         hairStyle: req.body.hairStyle || "default",
         outfit: req.body.outfit || "default",
@@ -1490,25 +1492,70 @@ export async function registerRoutes(
 
   // === COMMUNITY FEATURE 5: PRIVATE GROUP CHAT ===
   app.get("/api/communities/:id/messages", async (req, res) => {
-    const messages = await storage.getGroupMessages(req.params.id);
-    res.json({ messages });
+    try {
+      const messages = await storage.getGroupMessages(req.params.id);
+      res.json({ messages });
+    } catch (error: any) {
+      res.status(400).json(formatErrorResponse(error));
+    }
   });
 
   app.post("/api/communities/:id/message", async (req, res) => {
     if (!req.user) return res.status(401).json(formatErrorResponse({ message: "Not authenticated" }));
-    const msg = await storage.createGroupMessage(req.params.id, req.user.id, req.body.content);
-    res.json({ success: true, message: msg });
+    try {
+      const msg = await storage.createGroupMessage(req.params.id, req.user.id, req.body.content);
+      res.json({ success: true, message: msg });
+    } catch (error: any) {
+      res.status(400).json(formatErrorResponse(error));
+    }
   });
 
   app.get("/api/communities", async (req, res) => {
-    const communities = await db.select().from(privateGroups).limit(50);
-    res.json({ communities });
+    try {
+      const communities = await db.select().from(privateGroups).limit(50);
+      res.json({ communities });
+    } catch (error: any) {
+      res.status(400).json(formatErrorResponse(error));
+    }
   });
 
   app.post("/api/communities/:id/join", async (req, res) => {
     if (!req.user) return res.status(401).json(formatErrorResponse({ message: "Not authenticated" }));
     const member = await storage.joinGroup(req.params.id, req.user.id);
     res.json({ success: true, member });
+  });
+
+  // Tech Facts Feature - Interesting facts to show users
+  app.get("/api/tech-facts", (req, res) => {
+    const techFacts = [
+      "Python is the most popular language for AI/ML with 40% of ML projects",
+      "Quantum computers could break RSA encryption in hours instead of 300 trillion years",
+      "The first domain name was symbolics.com registered March 15, 1985",
+      "Frontier supercomputer performs 1.1 exaflops per second - the fastest ever",
+      "WebAssembly is 10-100x faster than JavaScript for compute-intensive tasks",
+      "5G networks transmit 10 Gbps - 100x faster than 4G LTE",
+      "Machine learning models can have billions to trillions of parameters",
+      "The metaverse could be a $1 trillion+ economy by 2030",
+      "Blockchain transactions are immutable - never changeable once written",
+      "GPUs are 100x faster than CPUs for parallel processing tasks",
+      "Kubernetes orchestrates millions of containers globally",
+      "GraphQL reduces data over-fetching by 60% vs REST APIs",
+      "Rust eliminates entire memory safety bug classes",
+      "TypeScript prevents type errors wasting 15% of debugging time",
+      "Linux powers 99.5% of world's supercomputers",
+      "Open-source projects contributed $500+ billion in value",
+      "GitHub hosts 330+ million repositories from 100M developers",
+      "AI training costs $10M+ per model for large language models",
+      "Cybersecurity breaches cost $4.45 million on average",
+      "Cloud computing saves 30% on IT infrastructure costs",
+      "DevOps reduces release cycles from months to hours",
+      "Serverless computing eliminates 60% infrastructure management",
+      "Zero-knowledge proofs prove data validity without revealing it",
+      "Dark web has 5+ million sites accessible only via Tor",
+      "FPGA chips reconfigure for any computation in microseconds"
+    ];
+    const random = techFacts[Math.floor(Math.random() * techFacts.length)];
+    res.json({ fact: random, total: techFacts.length });
   });
 
   return httpServer;
