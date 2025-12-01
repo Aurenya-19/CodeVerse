@@ -1,0 +1,71 @@
+{
+  "navigation": {
+    "arenas": "Skill Arenas",
+    "dashboard": "Dashboard",
+    "quests": "Daily Missions",
+    "leaderboard": "Leaderboard",
+    "clans": "Tech Clans",
+    "mentors": "Mentors",
+    "messages": "Messages",
+    "profile": "Profile",
+    "logout": "Logout",
+    "settings": "Settings"
+  },
+  "common": {
+    "welcome": "CodeVerse mein aapka swagat hai! 🚀",
+    "learnCoding": "Coding ko seekhiye apne speed pe",
+    "joinCommunity": "Community mein shamil hojaye aur grow kare",
+    "challenge": "Challenge",
+    "quest": "Daily Mission",
+    "level": "Level",
+    "xp": "Experience Points",
+    "success": "Success - Badiya!",
+    "error": "Kuch gadbad ho gayi",
+    "loading": "Load ho raha hai...",
+    "save": "Save karo",
+    "cancel": "Cancel",
+    "delete": "Delete karo",
+    "edit": "Edit karo"
+  },
+  "learning": {
+    "beginnerFriendly": "Beginners ke liye perfect",
+    "advancedContent": "Advanced content - experts ke liye",
+    "resources": "Padhai ke resources",
+    "completionRate": "Kitna complete hua",
+    "startLearning": "Learning shuru karo",
+    "continueChallenge": "Challenge continue karo",
+    "submitSolution": "Solution submit karo",
+    "viewSolution": "Solution dekho",
+    "hints": "Hints"
+  },
+  "stats": {
+    "totalChallenges": "Total Challenges",
+    "completed": "Complete kiye hue",
+    "inProgress": "Chal rahe hain",
+    "successRate": "Success rate",
+    "totalXP": "Total XP"
+  },
+  "community": {
+    "joinClan": "Clan mein join karo",
+    "createClan": "Apni clan banao",
+    "memberCount": "Members hain",
+    "discussions": "Baatcheet",
+    "sendMessage": "Message bhejo",
+    "privateGroup": "Private group - sirf select logon ke liye",
+    "requiresBadge": "Badge chahiye join karne ke liye"
+  },
+  "advanced": {
+    "eliteLearning": "Elite Learning - Advanced topics",
+    "extremeChallenges": "Bahut mushkil challenges",
+    "researchPapers": "Research papers aur articles",
+    "expertTips": "Expert logon ke tips",
+    "minLevel": "Kam se kam level chahiye"
+  },
+  "landing": {
+    "hero": "Tech seekhiye aur level up karo!",
+    "subtitle": "Gamified learning platform jo aapko expert banane mein madad karega",
+    "features": "Features",
+    "getStarted": "Shuru karo",
+    "joinNow": "Ab join karo"
+  }
+}

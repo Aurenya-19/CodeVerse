@@ -1449,30 +1449,63 @@ export async function registerRoutes(
 
   return httpServer;
 
-  // Solution Submission Routes
-  app.post("/api/challenge/:id/submit", async (req, res) => {
-    if (!req.user) return res.status(401).json(formatErrorResponse({ message: "Not authenticated" }));
+  // Advanced Learning Resource Routes
+  app.get("/api/learning-resources/:arena", async (req, res) => {
     try {
-      const { code, language } = req.body;
-      const challengeId = req.params.id;
-      const { analyzeSolution } = await import("./solutionAnalyzer");
-      const challenge = await storage.getChallengeById(challengeId);
-      if (!challenge) return res.status(404).json(formatErrorResponse({ message: "Challenge not found" }));
-      const analysis = analyzeSolution(challenge.starterCode || "", challenge.testCases || [], code);
-      const submission = await storage.submitSolution({
-        userId: req.user.id,
-        challengeId,
-        code,
-        language: language || "javascript",
-        isCorrect: analysis.isCorrect,
-        feedback: analysis.feedback,
-        analysis: { whatWrong: analysis.whatWrong, why: analysis.why, howToFix: analysis.howToFix, hints: analysis.hints },
-        score: analysis.score,
-      });
-      res.json({ ...analysis, submission });
+      const resources = LEARNING_RESOURCES[req.params.arena] || [];
+      res.json({ arena: req.params.arena, resources });
     } catch (error: any) {
       res.status(400).json(formatErrorResponse(error));
     }
+  });
 
   return httpServer;
 }
+
+// Curated learning resources for each arena
+const LEARNING_RESOURCES: Record<string, any[]> = {
+  ai: [
+    { title: "Deep Learning Specialization", url: "https://www.coursera.org/specializations/deep-learning", type: "course" },
+    { title: "Papers with Code", url: "https://paperswithcode.com/", type: "research" },
+    { title: "Stanford CS231N", url: "http://cs231n.stanford.edu/", type: "course" },
+    { title: "OpenAI Research", url: "https://openai.com/research/", type: "research" },
+    { title: "Hugging Face Hub", url: "https://huggingface.co/", type: "library" },
+  ],
+  web: [
+    { title: "MDN Web Docs", url: "https://developer.mozilla.org/", type: "docs" },
+    { title: "Web.dev by Google", url: "https://web.dev/", type: "course" },
+    { title: "JavaScript.info", url: "https://javascript.info/", type: "tutorial" },
+    { title: "React Official Docs", url: "https://react.dev/", type: "docs" },
+    { title: "CSS-Tricks", url: "https://css-tricks.com/", type: "blog" },
+  ],
+  mobile: [
+    { title: "React Native Docs", url: "https://reactnative.dev/", type: "docs" },
+    { title: "Flutter Official", url: "https://flutter.dev/", type: "docs" },
+    { title: "Swift.org", url: "https://swift.org/", type: "docs" },
+    { title: "Kotlin Official", url: "https://kotlinlang.org/", type: "docs" },
+  ],
+  cybersecurity: [
+    { title: "OWASP Top 10", url: "https://owasp.org/www-project-top-ten/", type: "guide" },
+    { title: "HackTheBox", url: "https://www.hackthebox.com/", type: "practice" },
+    { title: "TryHackMe", url: "https://tryhackme.com/", type: "practice" },
+    { title: "PortSwigger Web Security", url: "https://portswigger.net/web-security", type: "course" },
+  ],
+  blockchain: [
+    { title: "Ethereum Docs", url: "https://ethereum.org/developers", type: "docs" },
+    { title: "Solidity Docs", url: "https://docs.soliditylang.org/", type: "docs" },
+    { title: "CryptoZombies", url: "https://cryptozombies.io/", type: "game" },
+    { title: "OpenZeppelin Contracts", url: "https://docs.openzeppelin.com/contracts/", type: "library" },
+  ],
+  devops: [
+    { title: "Docker Documentation", url: "https://docs.docker.com/", type: "docs" },
+    { title: "Kubernetes.io", url: "https://kubernetes.io/", type: "docs" },
+    { title: "AWS Documentation", url: "https://docs.aws.amazon.com/", type: "docs" },
+    { title: "Linux Academy", url: "https://linuxacademy.com/", type: "course" },
+  ],
+  gamedev: [
+    { title: "Unity Learn", url: "https://learn.unity.com/", type: "course" },
+    { title: "Unreal Engine Docs", url: "https://docs.unrealengine.com/", type: "docs" },
+    { title: "Godot Engine", url: "https://godotengine.org/", type: "docs" },
+    { title: "Game Developer Roadmap", url: "https://roadmap.sh/game-developer", type: "guide" },
+  ],
+};

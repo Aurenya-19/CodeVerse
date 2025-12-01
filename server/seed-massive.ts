@@ -171,3 +171,44 @@ for (let i = 0; i < 17; i++) {
     });
   }
 }
+
+// Seed learning resources into database
+const learningResourcesData = [
+  // AI/ML Resources
+  { arenaId: 'arena_1', name: 'Deep Learning Specialization', url: 'https://www.coursera.org/specializations/deep-learning', type: 'course', difficulty: 'advanced' },
+  { arenaId: 'arena_1', name: 'Papers with Code', url: 'https://paperswithcode.com/', type: 'research', difficulty: 'extreme' },
+  { arenaId: 'arena_1', name: 'OpenAI Research', url: 'https://openai.com/research/', type: 'research', difficulty: 'extreme' },
+  { arenaId: 'arena_1', name: 'Stanford CS231N', url: 'http://cs231n.stanford.edu/', type: 'course', difficulty: 'advanced' },
+  
+  // Web Dev Resources
+  { arenaId: 'arena_2', name: 'MDN Web Docs', url: 'https://developer.mozilla.org/', type: 'docs', difficulty: 'intermediate' },
+  { arenaId: 'arena_2', name: 'Web.dev by Google', url: 'https://web.dev/', type: 'course', difficulty: 'intermediate' },
+  { arenaId: 'arena_2', name: 'React Official Docs', url: 'https://react.dev/', type: 'docs', difficulty: 'intermediate' },
+  { arenaId: 'arena_2', name: 'CSS-Tricks', url: 'https://css-tricks.com/', type: 'blog', difficulty: 'intermediate' },
+  
+  // Mobile Dev Resources
+  { arenaId: 'arena_3', name: 'React Native Docs', url: 'https://reactnative.dev/', type: 'docs', difficulty: 'intermediate' },
+  { arenaId: 'arena_3', name: 'Flutter Official', url: 'https://flutter.dev/', type: 'docs', difficulty: 'intermediate' },
+  { arenaId: 'arena_3', name: 'Swift.org', url: 'https://swift.org/', type: 'docs', difficulty: 'advanced' },
+  
+  // Cybersecurity Resources
+  { arenaId: 'arena_4', name: 'OWASP Top 10', url: 'https://owasp.org/www-project-top-ten/', type: 'guide', difficulty: 'intermediate' },
+  { arenaId: 'arena_4', name: 'HackTheBox', url: 'https://www.hackthebox.com/', type: 'practice', difficulty: 'advanced' },
+  { arenaId: 'arena_4', name: 'TryHackMe', url: 'https://tryhackme.com/', type: 'practice', difficulty: 'intermediate' },
+  { arenaId: 'arena_4', name: 'PortSwigger Web Security', url: 'https://portswigger.net/web-security', type: 'course', difficulty: 'advanced' },
+  
+  // Blockchain Resources
+  { arenaId: 'arena_5', name: 'Ethereum Docs', url: 'https://ethereum.org/developers', type: 'docs', difficulty: 'advanced' },
+  { arenaId: 'arena_5', name: 'Solidity Docs', url: 'https://docs.soliditylang.org/', type: 'docs', difficulty: 'advanced' },
+  { arenaId: 'arena_5', name: 'CryptoZombies', url: 'https://cryptozombies.io/', type: 'game', difficulty: 'intermediate' },
+  
+  // DevOps Resources
+  { arenaId: 'arena_6', name: 'Docker Documentation', url: 'https://docs.docker.com/', type: 'docs', difficulty: 'intermediate' },
+  { arenaId: 'arena_6', name: 'Kubernetes.io', url: 'https://kubernetes.io/', type: 'docs', difficulty: 'advanced' },
+  { arenaId: 'arena_6', name: 'AWS Documentation', url: 'https://docs.aws.amazon.com/', type: 'docs', difficulty: 'advanced' },
+  
+  // Game Dev Resources
+  { arenaId: 'arena_7', name: 'Unity Learn', url: 'https://learn.unity.com/', type: 'course', difficulty: 'intermediate' },
+  { arenaId: 'arena_7', name: 'Unreal Engine Docs', url: 'https://docs.unrealengine.com/', type: 'docs', difficulty: 'advanced' },
+  { arenaId: 'arena_7', name: 'Godot Engine', url: 'https://godotengine.org/', type: 'docs', difficulty: 'intermediate' },
+];
