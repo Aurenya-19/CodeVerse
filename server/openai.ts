@@ -397,7 +397,6 @@ I can help with:
 🎨 **Best Practices** - Clean code patterns
 
 **Ask me anything about programming!** Just be specific with your question.`;
-  }
 }
 
 // Main AI function
