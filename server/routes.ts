@@ -1449,63 +1449,67 @@ export async function registerRoutes(
 
   return httpServer;
 
-  // Advanced Learning Resource Routes
-  app.get("/api/learning-resources/:arena", async (req, res) => {
-    try {
-      const resources = LEARNING_RESOURCES[req.params.arena] || [];
-      res.json({ arena: req.params.arena, resources });
-    } catch (error: any) {
-      res.status(400).json(formatErrorResponse(error));
-    }
+  // === COMMUNITY FEATURE 1: LEVEL 3+ REQUIRED ===
+  app.post("/api/communities/create", async (req, res) => {
+    if (!req.user) return res.status(401).json(formatErrorResponse({ message: "Not authenticated" }));
+    const userProfile = await storage.getUserProfile(req.user.id);
+    if (!userProfile || userProfile.level < 3) return res.status(403).json(formatErrorResponse({ message: "Level 3+ required" }));
+    const group = await storage.createGroup({ ...req.body, creatorId: req.user.id, minLevel: 3 });
+    await storage.joinGroup(group.id, req.user.id);
+    res.json({ success: true, group });
+  });
+
+  // === COMMUNITY FEATURE 2: AI RECOMMENDATIONS ===
+  app.get("/api/communities/recommendations", async (req, res) => {
+    if (!req.user) return res.status(401).json(formatErrorResponse({ message: "Not authenticated" }));
+    const recs = await storage.getGroupRecommendations(req.user.id);
+    res.json({ recommendations: recs });
+  });
+
+  // === COMMUNITY FEATURE 3: LEVEL 5+ ADVANCED CHALLENGES ===
+  app.get("/api/advanced-challenges", async (req, res) => {
+    if (!req.user) return res.status(401).json(formatErrorResponse({ message: "Not authenticated" }));
+    const userProfile = await storage.getUserProfile(req.user.id);
+    if (!userProfile || userProfile.level < 5) return res.status(403).json(formatErrorResponse({ message: "Level 5+ required" }));
+    const challenges = await storage.getAdvancedChallenges();
+    res.json({ challenges, minLevel: 5 });
+  });
+
+  // === COMMUNITY FEATURE 4: BADGES ===
+  app.post("/api/badges/award", async (req, res) => {
+    if (!req.user) return res.status(401).json(formatErrorResponse({ message: "Not authenticated" }));
+    const badge = await storage.awardBadge(req.user.id, req.body.badgeId);
+    res.json({ success: !!badge, badge });
+  });
+
+  app.get("/api/badges/user", async (req, res) => {
+    if (!req.user) return res.status(401).json(formatErrorResponse({ message: "Not authenticated" }));
+    const badges = await storage.getUserBadges(req.user.id);
+    res.json({ badges });
+  });
+
+  // === COMMUNITY FEATURE 5: PRIVATE GROUP CHAT ===
+  app.get("/api/communities/:id/messages", async (req, res) => {
+    const messages = await storage.getGroupMessages(req.params.id);
+    res.json({ messages });
+  });
+
+  app.post("/api/communities/:id/message", async (req, res) => {
+    if (!req.user) return res.status(401).json(formatErrorResponse({ message: "Not authenticated" }));
+    const msg = await storage.createGroupMessage(req.params.id, req.user.id, req.body.content);
+    res.json({ success: true, message: msg });
+  });
+
+  app.get("/api/communities", async (req, res) => {
+    const communities = await db.select().from(privateGroups).limit(50);
+    res.json({ communities });
+  });
+
+  app.post("/api/communities/:id/join", async (req, res) => {
+    if (!req.user) return res.status(401).json(formatErrorResponse({ message: "Not authenticated" }));
+    const member = await storage.joinGroup(req.params.id, req.user.id);
+    res.json({ success: true, member });
   });
 
   return httpServer;
 }
-
-// Curated learning resources for each arena
-const LEARNING_RESOURCES: Record<string, any[]> = {
-  ai: [
-    { title: "Deep Learning Specialization", url: "https://www.coursera.org/specializations/deep-learning", type: "course" },
-    { title: "Papers with Code", url: "https://paperswithcode.com/", type: "research" },
-    { title: "Stanford CS231N", url: "http://cs231n.stanford.edu/", type: "course" },
-    { title: "OpenAI Research", url: "https://openai.com/research/", type: "research" },
-    { title: "Hugging Face Hub", url: "https://huggingface.co/", type: "library" },
-  ],
-  web: [
-    { title: "MDN Web Docs", url: "https://developer.mozilla.org/", type: "docs" },
-    { title: "Web.dev by Google", url: "https://web.dev/", type: "course" },
-    { title: "JavaScript.info", url: "https://javascript.info/", type: "tutorial" },
-    { title: "React Official Docs", url: "https://react.dev/", type: "docs" },
-    { title: "CSS-Tricks", url: "https://css-tricks.com/", type: "blog" },
-  ],
-  mobile: [
-    { title: "React Native Docs", url: "https://reactnative.dev/", type: "docs" },
-    { title: "Flutter Official", url: "https://flutter.dev/", type: "docs" },
-    { title: "Swift.org", url: "https://swift.org/", type: "docs" },
-    { title: "Kotlin Official", url: "https://kotlinlang.org/", type: "docs" },
-  ],
-  cybersecurity: [
-    { title: "OWASP Top 10", url: "https://owasp.org/www-project-top-ten/", type: "guide" },
-    { title: "HackTheBox", url: "https://www.hackthebox.com/", type: "practice" },
-    { title: "TryHackMe", url: "https://tryhackme.com/", type: "practice" },
-    { title: "PortSwigger Web Security", url: "https://portswigger.net/web-security", type: "course" },
-  ],
-  blockchain: [
-    { title: "Ethereum Docs", url: "https://ethereum.org/developers", type: "docs" },
-    { title: "Solidity Docs", url: "https://docs.soliditylang.org/", type: "docs" },
-    { title: "CryptoZombies", url: "https://cryptozombies.io/", type: "game" },
-    { title: "OpenZeppelin Contracts", url: "https://docs.openzeppelin.com/contracts/", type: "library" },
-  ],
-  devops: [
-    { title: "Docker Documentation", url: "https://docs.docker.com/", type: "docs" },
-    { title: "Kubernetes.io", url: "https://kubernetes.io/", type: "docs" },
-    { title: "AWS Documentation", url: "https://docs.aws.amazon.com/", type: "docs" },
-    { title: "Linux Academy", url: "https://linuxacademy.com/", type: "course" },
-  ],
-  gamedev: [
-    { title: "Unity Learn", url: "https://learn.unity.com/", type: "course" },
-    { title: "Unreal Engine Docs", url: "https://docs.unrealengine.com/", type: "docs" },
-    { title: "Godot Engine", url: "https://godotengine.org/", type: "docs" },
-    { title: "Game Developer Roadmap", url: "https://roadmap.sh/game-developer", type: "guide" },
-  ],
-};
