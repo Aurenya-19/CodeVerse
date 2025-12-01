@@ -352,10 +352,22 @@ export async function registerRoutes(
     }
   });
 
-  // Feed
+  // Feed - Real Tech News with Images
   app.get("/api/feed", async (req, res) => {
-    const feed = await storage.getFeedItems();
-    res.json(feed);
+    try {
+      const { getTechNews } = await import("./techNewsFeed");
+      const liveNews = await getTechNews();
+      // Try to get stored items too
+      const storedFeed = await storage.getFeedItems().catch(() => []);
+      // Combine live news + stored items
+      const combined = [...liveNews, ...storedFeed.slice(0, 5)];
+      res.set("Cache-Control", "public, max-age=3600");
+      res.json(combined);
+    } catch (error: any) {
+      // Fallback to stored feed if anything fails
+      const feed = await storage.getFeedItems().catch(() => []);
+      res.json(feed);
+    }
   });
 
   // Tech Resources - Niche Technologies with pagination
