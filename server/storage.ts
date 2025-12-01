@@ -19,6 +19,7 @@ import {
   leaderboardEntries,
   aiChats,
   userAvatars,
+  codeFusions,
   type User,
   type UpsertUser,
   type UserProfile,
@@ -43,6 +44,8 @@ import {
   type AiChat,
   type UserAvatar,
   type InsertAvatar,
+  type CodeFusion,
+  type InsertCodeFusion,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, and, or, like, sql, inArray } from "drizzle-orm";
@@ -664,20 +667,19 @@ export class DatabaseStorage implements IStorage {
       profile: r.user_profiles,
     }));
   }
-}
 
   // CodeFusion operations
-  async getUserCodeFusions(userId: string): Promise<any[]> {
+  async getUserCodeFusions(userId: string): Promise<CodeFusion[]> {
     return db.select().from(codeFusions).where(eq(codeFusions.userId, userId));
   }
 
-  async createCodeFusion(fusion: any): Promise<any> {
+  async createCodeFusion(fusion: InsertCodeFusion & { userId: string }): Promise<CodeFusion> {
     const [created] = await db.insert(codeFusions).values(fusion).returning();
     return created;
   }
 
-  async updateCodeFusion(id: string, fusion: Partial<any>): Promise<any> {
-    const [updated] = await db.update(codeFusions).set(fusion).where(eq(codeFusions.id, id)).returning();
+  async updateCodeFusion(id: string, fusion: Partial<InsertCodeFusion>): Promise<CodeFusion | undefined> {
+    const [updated] = await db.update(codeFusions).set({ ...fusion, updatedAt: new Date() }).where(eq(codeFusions.id, id)).returning();
     return updated;
   }
 
@@ -685,7 +687,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(codeFusions).where(eq(codeFusions.id, id));
   }
 
-  async getPublicCodeFusions(limit = 20): Promise<any[]> {
+  async getPublicCodeFusions(limit = 20): Promise<CodeFusion[]> {
     return db.select().from(codeFusions).where(eq(codeFusions.isPublic, true)).limit(limit);
   }
 }

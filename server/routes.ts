@@ -1385,5 +1385,66 @@ export async function registerRoutes(
     }
   });
 
+  // CodeFusion Routes
+  app.get("/api/codefusion", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const fusions = await storage.getUserCodeFusions(req.user.id);
+      res.json(fusions);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/codefusion", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { title, description, sourceCode, blendedCode, language, tags, isPublic } = req.body;
+      const fusion = await storage.createCodeFusion({
+        userId: req.user.id,
+        title,
+        description,
+        sourceCode: sourceCode || [],
+        blendedCode,
+        language: language || "javascript",
+        tags: tags || [],
+        isPublic: isPublic || false,
+      });
+      res.status(201).json(fusion);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/codefusion/:id", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const fusion = await storage.updateCodeFusion(req.params.id, req.body);
+      res.json(fusion);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/codefusion/:id", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      await storage.deleteCodeFusion(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/codefusion/public", async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const fusions = await storage.getPublicCodeFusions(limit);
+      res.json(fusions);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }
