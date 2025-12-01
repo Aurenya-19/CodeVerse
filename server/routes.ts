@@ -118,16 +118,13 @@ export async function registerRoutes(
   // Challenges with caching & performance headers
   app.get("/api/challenges", async (req, res) => {
     try {
-      const { cacheManager } = await import("./cache");
+      const { massiveChallenges } = await import("./massiveContent");
       const arenaId = req.query.arenaId as string | undefined;
-      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
       const offset = parseInt(req.query.offset as string) || 0;
       
-      let challenges = arenaId 
-        ? await storage.getChallenges(limit)
-        : await storage.getChallenges(limit);
-      
-      res.set("Cache-Control", "public, max-age=300");
+      let challenges = massiveChallenges.filter((c: any) => !arenaId || c.arenaId === arenaId);
+      res.set("Cache-Control", "public, max-age=3600");
       res.json(challenges.slice(offset, offset + limit));
     } catch (error: any) {
       res.status(400).json(formatErrorResponse(error));
@@ -260,8 +257,15 @@ export async function registerRoutes(
 
   // Quests
   app.get("/api/quests", async (req, res) => {
-    const quests = await storage.getQuests();
-    res.json(quests);
+    try {
+      const { massiveQuests } = await import("./massiveContent");
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+      const offset = parseInt(req.query.offset as string) || 0;
+      res.set("Cache-Control", "public, max-age=3600");
+      res.json(massiveQuests.slice(offset, offset + limit));
+    } catch (error: any) {
+      res.status(400).json(formatErrorResponse(error));
+    }
   });
 
   app.get("/api/user/quests", async (req, res) => {
@@ -281,10 +285,17 @@ export async function registerRoutes(
     }
   });
 
-  // Courses
+  // Courses - Massive Library
   app.get("/api/courses", async (req, res) => {
-    const courses = await storage.getCourses();
-    res.json(courses);
+    try {
+      const { massiveCourses } = await import("./massiveContent");
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 85);
+      const offset = parseInt(req.query.offset as string) || 0;
+      res.set("Cache-Control", "public, max-age=3600");
+      res.json(massiveCourses.slice(offset, offset + limit));
+    } catch (error: any) {
+      res.status(400).json(formatErrorResponse(error));
+    }
   });
 
   app.get("/api/user/courses", async (req, res) => {
