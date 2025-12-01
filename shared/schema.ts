@@ -458,3 +458,40 @@ export const codeFusions = pgTable("code_fusions", {
 export type CodeFusion = typeof codeFusions.$inferSelect;
 const insertCodeFusionSchema = createInsertSchema(codeFusions).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertCodeFusion = z.infer<typeof insertCodeFusionSchema>;
+
+// Solution Submissions & Feedback
+export const solutionSubmissions = pgTable("solution_submissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  challengeId: varchar("challenge_id").notNull().references(() => challenges.id),
+  code: text("code").notNull(),
+  language: varchar("language").default("javascript"),
+  isCorrect: boolean("is_correct").default(false),
+  feedback: text("feedback"),
+  analysis: jsonb("analysis"), // {whatWrong, why, howToFix, hints}
+  score: integer("score").default(0),
+  submittedAt: timestamp("submitted_at").defaultNow(),
+});
+
+export type SolutionSubmission = typeof solutionSubmissions.$inferSelect;
+const insertSolutionSchema = createInsertSchema(solutionSubmissions).omit({ id: true, submittedAt: true });
+export type InsertSolutionSubmission = z.infer<typeof insertSolutionSchema>;
+
+// Monthly Learning Reports
+export const learningReports = pgTable("learning_reports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  month: varchar("month").notNull(), // "2024-12"
+  totalChallengesAttempted: integer("total_challenges_attempted").default(0),
+  totalChallengesCompleted: integer("total_challenges_completed").default(0),
+  successRate: integer("success_rate").default(0),
+  knowledgeGaps: jsonb("knowledge_gaps"), // {field, strength: "coding"|"theory"|"practical"}
+  recommendations: text("recommendations"),
+  strengthAreas: text("strength_areas").array().default(sql`'{}'::text[]`),
+  improvementAreas: text("improvement_areas").array().default(sql`'{}'::text[]`),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type LearningReport = typeof learningReports.$inferSelect;
+const insertReportSchema = createInsertSchema(learningReports).omit({ id: true, createdAt: true });
+export type InsertLearningReport = z.infer<typeof insertReportSchema>;

@@ -696,6 +696,29 @@ export class DatabaseStorage implements IStorage {
   async getPublicCodeFusions(limit = 20): Promise<CodeFusion[]> {
     return db.select().from(codeFusions).where(eq(codeFusions.isPublic, true)).limit(limit);
   }
+  // Solution Submission operations
+  async getSolutionSubmissions(userId: string, limit = 50): Promise<any[]> {
+    return db.select().from(solutionSubmissions)
+      .where(eq(solutionSubmissions.userId, userId))
+      .limit(limit);
+  }
+
+  async submitSolution(submission: any): Promise<any> {
+    const [created] = await db.insert(solutionSubmissions).values(submission).returning();
+    return created;
+  }
+
+  // Learning Report operations
+  async getMonthlyReport(userId: string, month: string): Promise<any> {
+    const [report] = await db.select().from(learningReports)
+      .where(and(eq(learningReports.userId, userId), eq(learningReports.month, month)));
+    return report;
+  }
+
+  async createMonthlyReport(report: any): Promise<any> {
+    const [created] = await db.insert(learningReports).values(report).returning();
+    return created;
+  }
 }
 
 export const storage = new DatabaseStorage();

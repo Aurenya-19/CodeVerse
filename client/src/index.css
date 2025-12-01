@@ -287,3 +287,62 @@
     inset: -1px;
   }
 }
+/* Responsive Image and Layout Fixes */
+@media (max-width: 1024px) {
+  /* Tablet adjustments */
+  .prose { font-size: 0.95rem; }
+  img { max-width: 100%; height: auto; }
+  .grid { gap: 1rem; }
+}
+
+@media (max-width: 768px) {
+  /* Mobile adjustments */
+  body { font-size: 14px; }
+  img { max-width: 100%; height: auto; display: block; }
+  
+  /* Ensure full width usage */
+  .container { width: 100%; padding: 1rem; }
+  .prose { font-size: 0.9rem; }
+  
+  /* Fix overflow */
+  * { box-sizing: border-box; }
+  
+  /* Image gallery responsive */
+  .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  
+  /* Challenge card adjustments */
+  .card { margin: 0.5rem; padding: 1rem; }
+}
+
+@media (max-width: 480px) {
+  /* Small mobile adjustments */
+  body { font-size: 12px; }
+  
+  /* Single column layouts */
+  .grid { grid-template-columns: 1fr !important; }
+  .grid-cols-2 { grid-template-columns: 1fr !important; }
+  .grid-cols-3 { grid-template-columns: 1fr !important; }
+  
+  /* Full width images */
+  img { width: 100%; height: auto; }
+  
+  /* Reduce padding on small screens */
+  .p-4 { padding: 0.5rem; }
+  .p-6 { padding: 1rem; }
+}
+
+/* Ensure all images are responsive */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Responsive containers */
+.container {
+  width: 100%;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 1rem;
+}
