@@ -1,240 +1,225 @@
 // ============================================================================
-// CODEVERSE AI - REAL LLM ENGINE with Groq
+// CODEVERSE AI - OPTIMIZED FAST LLM ENGINE with Groq
 // ============================================================================
-// Actual large language model reasoning with multi-turn conversation
+// Real LLM with response caching and optimized settings for speed
 // ============================================================================
 
 import Groq from "groq-sdk";
 
-// Lazy initialization - check API key at runtime
 let groqClient: Groq | null = null;
 
 function getGroqClient(): Groq | null {
-  if (!process.env.GROQ_API_KEY) {
-    return null;
-  }
+  if (!process.env.GROQ_API_KEY) return null;
   if (!groqClient) {
     groqClient = new Groq({
       apiKey: process.env.GROQ_API_KEY,
+      timeout: 15000, // 15 second timeout for faster failure
     });
   }
   return groqClient;
 }
 
-// System prompt for programming expert
-const SYSTEM_PROMPT = `You are CodeMentor, an expert programming AI assistant.
+// Response cache to avoid repeated API calls
+const responseCache = new Map<string, { response: string; timestamp: number }>();
+const CACHE_TTL = 3600000; // 1 hour
 
-When someone asks you a question:
-1. Understand what they're asking
-2. Give a detailed, expert response
-3. Provide code examples if relevant
-4. Explain complexity and trade-offs
-5. Share best practices
+function getCacheKey(message: string, history: any[]): string {
+  return `${message}|${history.length}`;
+}
 
-Be concise but comprehensive. Always be helpful.`;
+function getFromCache(key: string): string | null {
+  const cached = responseCache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.response;
+  }
+  if (cached) responseCache.delete(key);
+  return null;
+}
 
-// Fallback responses if API is not available
+function setCache(key: string, response: string): void {
+  responseCache.set(key, { response, timestamp: Date.now() });
+  // Limit cache size
+  if (responseCache.size > 100) {
+    const firstKey = responseCache.keys().next().value;
+    responseCache.delete(firstKey);
+  }
+}
+
+// Optimized system prompt - shorter for faster response
+const SYSTEM_PROMPT = `You are CodeMentor, an expert programming assistant.
+Answer concisely with practical, helpful advice.
+Use code examples when relevant.
+Be direct and clear.`;
+
+// Fast fallback responses
 function generateFallbackResponse(message: string): string {
   const msg = message.toLowerCase();
   
-  if (msg.match(/bug|error|crash|fix|debug|exception|stack|trace/)) {
-    return `🔍 **Debugging Assistant**
-
-I'll help you fix this error systematically.
-
-**To debug effectively, share:**
-1. The exact error message
-2. Your code (the relevant part)
-3. What you were trying to do
-4. What you expected vs what happened
-
-**My debugging approach:**
-1. Analyze the error type
-2. Find the root cause
-3. Propose a solution
-4. Explain how to prevent it
-
-Share your error and code!`;
+  if (msg.match(/bug|error|debug/)) {
+    return `🔍 **Debug This**
+1. Share the exact error message
+2. Show relevant code
+3. I'll identify the root cause
+4. Provide the solution`;
   }
-  if (msg.match(/explain|understand|how|why|what|concept|learn|teach/)) {
-    return `📚 **Learning Mode - Concept Explanation**
-
-I'll explain this concept deeply:
-
-1. **What is it?** - Simple definition
-2. **Why does it matter?** - Real-world use cases
-3. **How does it work?** - Step-by-step explanation
-4. **Show me code** - Practical examples
-5. **When to use?** - Best practices
-
-**What concept would you like me to explain?**`;
+  if (msg.match(/explain|learn|understand/)) {
+    return `📚 **Learn Concept**
+1. Definition and why it matters
+2. How it works
+3. Code examples
+4. When to use it`;
   }
-  if (msg.match(/algorithm|solve|code|implement|design|approach/)) {
-    return `🎯 **Algorithm Design & Problem Solving**
-
-I'll help you solve this step-by-step:
-
-1. **Understand the problem** - Constraints and requirements
-2. **Design approach** - Algorithm selection
-3. **Complexity analysis** - Time and space
-4. **Implementation** - Clean code
-5. **Optimization** - Make it better
-
-**Share the problem you want to solve!**`;
+  if (msg.match(/algorithm|solve|code/)) {
+    return `🎯 **Solve Problem**
+1. Understand requirements
+2. Design approach
+3. Analyze complexity
+4. Code solution`;
   }
-  if (msg.match(/optimize|faster|performance|slow|improve/)) {
-    return `⚡ **Performance Optimization**
-
-I'll help you optimize this:
-
-1. **Measure current performance** - Baseline metrics
-2. **Find the bottleneck** - Where is it slow?
-3. **Reduce complexity** - Algorithm improvements
-4. **Optimize code** - Better implementation
-5. **Verify improvement** - Test and measure
-
-**Share your code and performance metrics!**`;
+  if (msg.match(/optimize|performance|fast/)) {
+    return `⚡ **Optimize**
+1. Measure current speed
+2. Find bottleneck
+3. Reduce complexity
+4. Test improvement`;
   }
-  if (msg.match(/system|architecture|scale|design|structure/)) {
-    return `🏗️ **System Architecture & Design**
-
-I'll guide you through system design:
-
-1. **Requirements** - Functional and non-functional
-2. **Components** - Architecture breakdown
-3. **Data strategy** - Database design
-4. **Scalability** - How to handle growth
-5. **Reliability** - Handle failures gracefully
-
-**Tell me what system you're designing!**`;
+  if (msg.match(/system|design|architecture/)) {
+    return `🏗️ **System Design**
+1. Requirements
+2. Components
+3. Data strategy
+4. Scalability`;
   }
   
-  return `🚀 **CodeMentor AI - Expert Programming Assistant**
-
-I'm here to help with:
-- 🐛 **Debugging** - Fix errors and understand root causes
-- 📚 **Learning** - Understand programming concepts
-- 🎯 **Algorithms** - Solve problems efficiently
-- ⚡ **Optimization** - Make code faster
-- 🏗️ **Architecture** - Design scalable systems
-
-Ask me anything about programming!`;
+  return `🚀 **CodeMentor AI**
+Ask me about:
+- Debugging errors
+- Learning concepts
+- Solving algorithms
+- Optimizing code
+- System design`;
 }
 
-// Main AI function using Groq
+// Main AI function with speed optimizations
 export async function chatWithCopilot(
   message: string,
   history: Array<{ role: string; content: string }> = []
 ): Promise<string> {
   try {
-    console.log("[CodeMentor] Processing message...");
-    
+    // Check cache first
+    const cacheKey = getCacheKey(message, history);
+    const cached = getFromCache(cacheKey);
+    if (cached) {
+      console.log("[CodeMentor] Cache hit");
+      return cached;
+    }
+
     const groq = getGroqClient();
-    
     if (!groq) {
-      console.log("[CodeMentor] Groq not available, using fallback");
+      console.log("[CodeMentor] Groq unavailable");
       return generateFallbackResponse(message);
     }
 
-    console.log("[CodeMentor] Using Groq LLM");
-
-    // Prepare conversation
+    // Limit history to last 2 messages for speed
+    const recentHistory = history.slice(-2);
+    
     const messages: Array<{ role: "user" | "assistant"; content: string }> = [
-      ...history.map((msg) => ({
+      ...recentHistory.map((msg) => ({
         role: msg.role as "user" | "assistant",
         content: msg.content,
       })),
       { role: "user" as const, content: message },
     ];
 
-    // Call Groq API
+    console.log("[CodeMentor] Calling Groq API...");
+    
+    // Optimized settings for speed
     const response = await groq.chat.completions.create({
       model: "mixtral-8x7b-32768",
       messages: [
         { role: "system" as const, content: SYSTEM_PROMPT },
         ...messages,
       ],
-      temperature: 0.7,
-      max_tokens: 2000,
-      top_p: 1,
+      temperature: 0.5, // Lower = faster inference
+      max_tokens: 1024, // Reduced from 2000 for speed
+      top_p: 0.9, // Faster than 1.0
     });
 
     const content = response.choices[0]?.message?.content || "";
     
     if (!content) {
-      console.log("[CodeMentor] Empty response, using fallback");
       return generateFallbackResponse(message);
     }
 
+    // Cache the response
+    setCache(cacheKey, content);
     console.log("[CodeMentor] Got LLM response");
+    
     return content;
   } catch (error: any) {
-    console.error("[CodeMentor] Error:", error?.message || error);
+    console.error("[CodeMentor] Error:", error?.message);
+    // Return quick fallback on timeout or error
     return generateFallbackResponse(message);
   }
 }
 
-// Code explanation
+// Fast code explanation
 export async function explainCode(code: string): Promise<string> {
-  return chatWithCopilot(`Explain this code:\n\n${code}`);
+  return chatWithCopilot(`Explain:\n${code.slice(0, 500)}`);
 }
 
-// Debugging
+// Fast debugging
 export async function debugCode(code: string, error: string): Promise<string> {
-  return chatWithCopilot(`Debug this:\n\nCode:\n${code}\n\nError: ${error}`);
+  return chatWithCopilot(`Debug:\n${code.slice(0, 300)}\nError: ${error}`);
 }
 
-// Learning paths
+// Fast learning path
 export async function generateLearningPath(topic: string, skillLevel: string): Promise<string> {
-  return chatWithCopilot(
-    `Create a ${skillLevel} learning path for: ${topic}`
-  );
+  return chatWithCopilot(`${skillLevel} learning path for ${topic}`);
 }
 
-// Tech questions
+// Fast tech questions
 export async function answerTechQuestion(question: string, context: string = ""): Promise<string> {
-  return chatWithCopilot(context ? `${question}\n\nContext: ${context}` : question);
+  return chatWithCopilot(context ? `${question}\nContext: ${context.slice(0, 200)}` : question);
 }
 
-// Project ideas
+// Fast project ideas
 export async function generateProjectIdea(interests: string[], skillLevel: string): Promise<string> {
-  return chatWithCopilot(
-    `Suggest projects for ${skillLevel} interested in: ${interests.join(", ")}`
-  );
+  return chatWithCopilot(`${skillLevel} projects for: ${interests.slice(0, 3).join(", ")}`);
 }
 
-// Quiz
+// Quick quiz
 export async function generateQuizQuestion(
   topic: string,
   difficulty: string
 ): Promise<{ question: string; options: string[]; correctAnswer: number }> {
   return {
-    question: `Test your ${topic} knowledge`,
-    options: ["Expert", "Advanced", "Intermediate", "Beginner"],
+    question: `${topic} quiz`,
+    options: ["Option A", "Option B", "Option C", "Option D"],
     correctAnswer: 0,
   };
 }
 
-// Courses
+// Quick lessons
 export async function generateCourseLessons(
   courseTitle: string,
-  courseDescription: string,
+  _courseDescription: string,
   numLessons: number = 10
 ): Promise<Array<{ title: string; description: string }>> {
   return Array.from({ length: Math.min(numLessons, 20) }, (_, i) => ({
     title: `${courseTitle} - Lesson ${i + 1}`,
-    description: "Learn concepts with examples and practice",
+    description: "Learn with examples and practice",
   }));
 }
 
-// Roadmaps
+// Quick roadmap
 export async function generateRoadmapMilestones(
   roadmapName: string,
-  roadmapDescription: string,
+  _roadmapDescription: string,
   numMilestones: number = 8
 ): Promise<Array<{ title: string; description: string }>> {
   return Array.from({ length: Math.min(numMilestones, 12) }, (_, i) => ({
     title: `${roadmapName} - Phase ${i + 1}`,
-    description: "Progress through structured learning",
+    description: "Progress milestone",
   }));
 }
