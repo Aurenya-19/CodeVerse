@@ -1,383 +1,386 @@
-// CodeVerse AI - PRODUCTION-READY INTELLIGENT ENGINE
-// Simple, Direct, Guaranteed to Work
+// ============================================================================
+// CODEVERSE AI - REAL LLM ENGINE with Groq
+// ============================================================================
+// Actual large language model reasoning with multi-turn conversation
+// Falls back to expert templates if API unavailable
+// ============================================================================
 
-// Detect what the user is asking about
-function analyzeUserMessage(message: string): string {
+import Groq from "groq-sdk";
+
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY || "",
+});
+
+const HAS_GROQ = !!process.env.GROQ_API_KEY;
+
+// System prompt for programming expert
+const SYSTEM_PROMPT = `You are CodeMentor, an expert programming AI assistant specializing in:
+- Debugging and error resolution
+- Algorithm design and optimization
+- System architecture and design patterns
+- Code explanation and learning
+- Performance optimization
+
+You provide structured, detailed responses with:
+1. Clear problem analysis
+2. Step-by-step solutions
+3. Code examples when relevant
+4. Complexity analysis for algorithms
+5. Best practices and common pitfalls
+
+Always format responses clearly with headers, bullet points, and examples.
+Keep responses concise but comprehensive.
+When debugging, ask clarifying questions if needed.
+Provide multiple approaches when applicable.`;
+
+// Fallback responses if API is not available
+function generateFallbackResponse(message: string): string {
   const msg = message.toLowerCase();
   
-  if (msg.match(/bug|error|crash|fix|debug|exception|stack|trace/)) return "debugging";
-  if (msg.match(/explain|understand|how|why|what|concept|learn|teach/)) return "learning";
-  if (msg.match(/algorithm|solve|code|implement|design|approach|pattern/)) return "algorithm";
-  if (msg.match(/optimize|faster|performance|slow|efficient|improve/)) return "optimization";
-  if (msg.match(/system|architecture|scale|design|structure/)) return "design";
-  return "general";
+  if (msg.match(/bug|error|crash|fix|debug|exception|stack|trace/)) {
+    return `🔍 **Debugging Assistant**
+
+**Approach to fixing this:**
+1. Identify the exact error type
+2. Find where it occurs
+3. Trace the root cause
+4. Test your fix
+5. Prevent future occurrences
+
+**Share your error message and code for specific help!**`;
+  }
+  if (msg.match(/explain|understand|how|why|what|concept|learn|teach/)) {
+    return `📚 **Learning Mode**
+
+I'll explain concepts with:
+- Clear definitions
+- Real examples
+- Practical applications
+- Common misconceptions
+- When to use it
+
+**What concept would you like to understand?**`;
+  }
+  if (msg.match(/algorithm|solve|code|implement|design|approach/)) {
+    return `🎯 **Algorithm Design**
+
+**My approach:**
+1. Understand the problem
+2. Analyze complexity
+3. Design the solution
+4. Code it clearly
+5. Optimize if needed
+
+**Share the problem details!**`;
+  }
+  if (msg.match(/optimize|faster|performance|slow/)) {
+    return `⚡ **Performance Optimization**
+
+**Optimization strategy:**
+1. Measure current speed
+2. Find the bottleneck
+3. Reduce complexity
+4. Test the improvement
+5. Document changes
+
+**Share your code and metrics!**`;
+  }
+  if (msg.match(/system|architecture|scale|design/)) {
+    return `🏗️ **System Design**
+
+**Design framework:**
+1. Functional requirements
+2. Non-functional requirements
+3. Component architecture
+4. Data strategy
+5. Scalability plan
+
+**What system are you designing?**`;
+  }
+  
+  return `🚀 **CodeMentor AI - Your Programming Expert**
+
+Ask me about:
+- 🐛 Debugging errors
+- 📚 Learning concepts
+- 🎯 Algorithm problems
+- ⚡ Performance optimization
+- 🏗️ System architecture
+
+**What can I help you with?**`;
 }
 
-// Generate actual expert responses based on question type
-function generateResponse(message: string, type: string): string {
-  // DEBUGGING RESPONSES
-  if (type === "debugging") {
-    return `🔍 **DEBUGGING ASSISTANT - SYSTEMATIC APPROACH**
-
-I detected you need debugging help. Here's my methodology:
-
-**Step 1: Error Classification**
-- Syntax errors (code won't parse)
-- Runtime errors (crashes during execution)  
-- Logic errors (wrong results)
-- Type errors (type mismatches)
-
-**Step 2: Gather Information**
-→ What is the EXACT error message?
-→ On which line does it occur?
-→ What was the last working action?
-→ Can you reproduce it consistently?
-
-**Step 3: Systematic Investigation**
-1. Read the error message completely
-2. Identify error type and location
-3. Check recent changes
-4. Isolate the problem area
-5. Test a fix
-
-**Step 4: Root Cause Analysis**
-- Variable scope issues
-- Null/undefined values
-- Type mismatches
-- Async/await ordering
-- Function binding (this context)
-
-**Step 5: Solution & Prevention**
-1. Fix the immediate issue
-2. Test thoroughly
-3. Add defensive checks
-4. Document the lesson
-
-**Next Steps:** Share your error message and code, I'll provide specific guidance!`;
-  }
-
-  // LEARNING RESPONSES  
-  if (type === "learning") {
-    return `📚 **DEEP LEARNING EXPLANATION**
-
-You're asking to understand something deeply. Here's how I'll help:
-
-**My Teaching Approach:**
-1. Start with simple definition
-2. Explain the core mechanism
-3. Show real-world examples
-4. Compare with related concepts
-5. Highlight common misconceptions
-
-**What I'll Cover:**
-→ Why this concept matters
-→ How it works under the hood
-→ When to use it (and when NOT to)
-→ Practical code examples
-→ Performance implications
-→ Security considerations
-
-**Learning Best Practices:**
-- Code the concept yourself
-- Modify examples and predict results
-- Test edge cases
-- Teach it to someone else
-- Apply it in a project
-
-**Key Insight:** Understanding comes from doing, not just reading.
-
-**Example Concept Learning Path:**
-1. Definition - What is it?
-2. Intuition - Why does it work?
-3. Examples - Show me code
-4. Practice - Code it myself
-5. Application - Use in real project
-
-**Mental Models Help:** Think of it like... [real-world analogy]
-
-**Next Steps:** Tell me what concept you want to understand!`;
-  }
-
-  // ALGORITHM RESPONSES
-  if (type === "algorithm") {
-    return `🎯 **ALGORITHM DESIGN GUIDE**
-
-You're asking for a problem-solving approach. Here's the systematic method:
-
-**Phase 1: Understanding**
-- Input: What data do you receive?
-- Output: What should you return?
-- Constraints: Time/space limits?
-- Examples: Test cases (simple, medium, hard)
-
-**Phase 2: Algorithm Selection**
-- Brute force: Understand the problem first
-- Optimization: Reduce complexity
-- Trade-offs: Speed vs space?
-
-**Phase 3: Complexity Analysis**
-Measure performance growth with input size:
-- O(1) - Constant (best)
-- O(log n) - Logarithmic (great)
-- O(n) - Linear (good)
-- O(n log n) - Optimal for sorting (very good)
-- O(n²) - Quadratic (acceptable for small n)
-- O(2ⁿ) - Exponential (avoid!)
-
-**Phase 4: Design**
-1. Pseudocode first (no language yet)
-2. Pick data structures
-3. Handle edge cases
-4. Write clean code
-
-**Phase 5: Testing**
-- Simple example → verify it works
-- Edge cases → empty, single, boundary
-- Complex example → multi-step
-- Performance → meet requirements?
-
-**Common Patterns:**
-- Two pointers: Move from both ends
-- Sliding window: Fixed/variable window  
-- Dynamic programming: Overlapping subproblems
-- Recursion: Break into smaller instances
-- Binary search: O(log n) searching
-- Sorting: Choose based on constraints
-
-**Next Steps:** Share the problem or algorithm question!`;
-  }
-
-  // OPTIMIZATION RESPONSES
-  if (type === "optimization") {
-    return `⚡ **PERFORMANCE OPTIMIZATION MASTERCLASS**
-
-You want to make code faster. Here's the systematic approach:
-
-**Step 1: Measure (What's slow?)**
-- Record current performance
-- Profile to find bottlenecks
-- Identify the slowest 20%
-- Check memory usage
-
-**Step 2: Identify (Where's the problem?)**
-- Algorithm complexity too high?
-- Redundant operations?
-- Inefficient data structures?
-- Network requests?
-- Database queries?
-
-**Step 3: Optimize (Fix in this order)**
-
-**A. Algorithm Level (BIGGEST impact)**
-- Reduce Big O complexity (O(n²) → O(n log n))
-- Eliminate redundant work
-- Better data structure
-- Cache expensive computations
-
-**B. Code Level (Medium impact)**
-- Minimize loops
-- Reduce function calls
-- Batch operations
-- Lazy evaluation
-- Remove allocations
-
-**C. System Level (Specific impact)**
-- Database indexing
-- Connection pooling
-- Caching layer
-- CDN for static files
-- Load balancing
-
-**Step 4: Verify (Did it work?)**
-- Measure new performance
-- Calculate improvement %
-- Check for regressions
-- Document changes
-
-**Optimization Rules:**
-1. Measure FIRST (don't guess)
-2. Optimize algorithm FIRST (biggest impact)
-3. Code optimization SECOND  
-4. System optimization THIRD
-5. Measure AFTER (verify improvement)
-
-**Next Steps:** Share your slow code and metrics!`;
-  }
-
-  // DESIGN/ARCHITECTURE RESPONSES
-  if (type === "design") {
-    return `🏗️ **SYSTEM DESIGN & ARCHITECTURE**
-
-You're asking for architectural guidance. Here's the framework:
-
-**Step 1: Understand Requirements**
-
-Functional (What must it do?):
-- Core features
-- User interactions
-- Data operations
-- Integrations
-
-Non-Functional (Quality attributes):
-- Performance: Target latency/throughput?
-- Scalability: Expected users/growth?
-- Reliability: Uptime requirement?
-- Security: Data protection needs?
-- Cost: Budget constraints?
-
-**Step 2: Architecture Patterns**
-
-Monolithic: Single codebase
-- Pros: Simple, deploy together
-- Cons: Hard to scale separately
-
-Microservices: Multiple services
-- Pros: Independent scaling
-- Cons: Operational complexity
-
-Serverless: Functions as a service  
-- Pros: Pay-per-use, auto-scale
-- Cons: Limited control, cold starts
-
-**Step 3: Component Design**
-- Frontend: Web/mobile/desktop
-- API Gateway: Route requests
-- Services: Business logic
-- Database: Data persistence
-- Cache: Fast reads (Redis)
-- Storage: Files, blobs
-
-**Step 4: Data Strategy**
-- SQL: Structured, ACID
-- NoSQL: Flexible, scalable
-- Cache: Fast lookups
-- Search: Full-text (Elasticsearch)
-
-**Step 5: Scalability**
-1. Horizontal: Add more servers (best)
-2. Vertical: Bigger hardware (limited)
-3. Caching: Reduce database hits
-4. CDN: Global distribution
-5. Database optimization: Indexing, partitioning
-
-**Step 6: Reliability**
-- Redundancy: Multiple instances
-- Health checks: Monitor systems
-- Circuit breakers: Fail gracefully
-- Retry logic: Exponential backoff
-- Monitoring: Alerting
-- Backup: Data recovery
-
-**Step 7: Security**
-- Authentication: User identity
-- Authorization: Permissions
-- Encryption: In transit & at rest
-- Input validation: Prevent injection
-- Rate limiting: Prevent abuse
-
-**Next Steps:** Tell me what system you're designing!`;
-  }
-
-  // DEFAULT/GENERAL RESPONSES
-  return `🚀 **CODEMENTOR AI - YOUR EXPERT ASSISTANT**
-
-I'm an advanced AI trained on programming, algorithms, system design, and debugging.
-
-**I can help with:**
-
-🐛 **Debugging** - Fix errors systematically
-📚 **Learning** - Understand concepts deeply  
-🎯 **Algorithms** - Solve problems efficiently
-⚡ **Optimization** - Make code faster
-🏗️ **Design** - Build scalable systems
-
-**How to Get the Best Answers:**
-1. Be specific - Share code, errors, context
-2. Describe what you tried
-3. Ask follow-up questions
-4. Provide constraints/requirements
-
-**Example Questions I Can Answer:**
-→ "Debug this error: [error message]"
-→ "Explain closures in JavaScript"
-→ "How do I solve this algorithm?"
-→ "Optimize this slow code"
-→ "Design a system for [requirement]"
-
-**What I'll Provide:**
-✓ Step-by-step guidance
-✓ Code examples
-✓ Best practices
-✓ Complexity analysis
-✓ Trade-off analysis
-
-**Ready to help! What's your question?** 🎯`;
-}
-
-// Main export
+// Main AI function using Groq
 export async function chatWithCopilot(
   message: string,
   history: Array<{ role: string; content: string }> = []
 ): Promise<string> {
   try {
-    const type = analyzeUserMessage(message);
-    const response = generateResponse(message, type);
-    return response;
+    // If no Groq API key, use fallback
+    if (!HAS_GROQ) {
+      console.log("Groq API not available, using fallback responses");
+      return generateFallbackResponse(message);
+    }
+
+    // Prepare conversation for Groq
+    const messages: Array<{ role: "user" | "assistant"; content: string }> = [
+      ...history.map((msg) => ({
+        role: msg.role as "user" | "assistant",
+        content: msg.content,
+      })),
+      { role: "user" as const, content: message },
+    ];
+
+    // Call Groq API for real LLM reasoning
+    const response = await groq.chat.completions.create({
+      model: "mixtral-8x7b-32768", // Fast and powerful open-source model
+      messages: [
+        { role: "system" as const, content: SYSTEM_PROMPT },
+        ...messages,
+      ],
+      temperature: 0.7, // Balanced creativity and consistency
+      max_tokens: 2000, // Generous response length
+      top_p: 1,
+      stream: false,
+    });
+
+    const content = response.choices[0]?.message?.content || "";
+    if (!content) {
+      return generateFallbackResponse(message);
+    }
+
+    return content;
   } catch (error: any) {
-    console.error("AI Error:", error);
-    return "I encountered an error. Please try again with a simpler question.";
+    console.error("Groq API error:", error?.message);
+    // Fall back to template responses on API error
+    return generateFallbackResponse(message);
   }
 }
 
+// Code explanation with real LLM
 export async function explainCode(code: string): Promise<string> {
-  return chatWithCopilot(`Explain this code:\n\n${code}`);
+  const prompt = `Analyze and explain this code thoroughly:
+
+\`\`\`
+${code}
+\`\`\`
+
+Provide:
+1. What does this code do?
+2. How does it work step-by-step?
+3. Key concepts being used
+4. Potential issues or improvements
+5. Performance characteristics`;
+
+  return chatWithCopilot(prompt);
 }
 
+// Debugging with real LLM reasoning
 export async function debugCode(code: string, error: string): Promise<string> {
-  return chatWithCopilot(`Debug this:\n\nCode:\n${code}\n\nError: ${error}`);
+  const prompt = `Help me debug this code:
+
+**Code:**
+\`\`\`
+${code}
+\`\`\`
+
+**Error:**
+\`\`\`
+${error}
+\`\`\`
+
+Provide:
+1. What caused this error?
+2. Where is the root cause?
+3. Step-by-step fix
+4. How to prevent it
+5. Testing strategy`;
+
+  return chatWithCopilot(prompt);
 }
 
+// Learning path with reasoning
 export async function generateLearningPath(topic: string, skillLevel: string): Promise<string> {
-  return chatWithCopilot(`Create a learning path for ${skillLevel} learning ${topic}`);
+  const prompt = `Create a structured learning path for a ${skillLevel} developer learning ${topic}.
+
+Include:
+1. Prerequisites needed
+2. Core concepts to master (in order)
+3. Practical exercises at each stage
+4. Projects to build understanding
+5. Advanced topics when ready
+6. Resources and practice tips
+7. Estimated timeline`;
+
+  return chatWithCopilot(prompt);
 }
 
+// Tech questions with real reasoning
 export async function answerTechQuestion(question: string, context: string = ""): Promise<string> {
-  return chatWithCopilot(context ? `${question}\n\nContext: ${context}` : question);
+  const prompt = context 
+    ? `${question}\n\nAdditional context:\n${context}`
+    : question;
+  
+  return chatWithCopilot(prompt);
 }
 
+// Project ideas with real LLM
 export async function generateProjectIdea(interests: string[], skillLevel: string): Promise<string> {
-  return chatWithCopilot(`Suggest projects for ${skillLevel} interested in: ${interests.join(", ")}`);
+  const prompt = `Suggest innovative project ideas for a ${skillLevel} developer interested in: ${interests.join(", ")}
+
+For each idea provide:
+1. Project name and description
+2. Skills it teaches
+3. Technical stack recommendation
+4. Implementation steps
+5. Enhancement opportunities
+6. Learning outcomes`;
+
+  return chatWithCopilot(prompt);
 }
 
+// Quiz generation with LLM
 export async function generateQuizQuestion(
   topic: string,
   difficulty: string
 ): Promise<{ question: string; options: string[]; correctAnswer: number }> {
-  return {
-    question: `Master ${topic}?`,
-    options: ["Expert", "Advanced", "Intermediate", "Beginner"],
-    correctAnswer: 0,
-  };
+  try {
+    if (!HAS_GROQ) {
+      return {
+        question: `What's a key concept in ${topic}?`,
+        options: ["Concept A", "Concept B", "Concept C", "Concept D"],
+        correctAnswer: 0,
+      };
+    }
+
+    const response = await groq.chat.completions.create({
+      model: "mixtral-8x7b-32768",
+      messages: [
+        {
+          role: "system" as const,
+          content: `Generate a ${difficulty} level multiple choice question about ${topic}. 
+          Return ONLY valid JSON with: {"question": "...", "options": ["A","B","C","D"], "correctAnswer": 0-3}`,
+        },
+        {
+          role: "user" as const,
+          content: `Generate a ${difficulty} quiz question about ${topic}`,
+        },
+      ],
+      temperature: 0.8,
+      max_tokens: 300,
+    });
+
+    const content = response.choices[0]?.message?.content || "";
+    try {
+      return JSON.parse(content);
+    } catch {
+      return {
+        question: `What's a key concept in ${topic}?`,
+        options: ["Concept A", "Concept B", "Concept C", "Concept D"],
+        correctAnswer: 0,
+      };
+    }
+  } catch (error) {
+    return {
+      question: `What's a key concept in ${topic}?`,
+      options: ["Concept A", "Concept B", "Concept C", "Concept D"],
+      correctAnswer: 0,
+    };
+  }
 }
 
+// Course lessons with LLM generation
 export async function generateCourseLessons(
   courseTitle: string,
   courseDescription: string,
   numLessons: number = 10
 ): Promise<Array<{ title: string; description: string }>> {
-  return Array.from({ length: Math.min(numLessons, 20) }, (_, i) => ({
-    title: `${courseTitle} - Lesson ${i + 1}`,
-    description: "Master this concept with detailed explanation and examples",
-  }));
+  try {
+    if (!HAS_GROQ) {
+      return Array.from({ length: Math.min(numLessons, 20) }, (_, i) => ({
+        title: `${courseTitle} - Lesson ${i + 1}`,
+        description: "Learn key concepts with examples and practice",
+      }));
+    }
+
+    const response = await groq.chat.completions.create({
+      model: "mixtral-8x7b-32768",
+      messages: [
+        {
+          role: "system" as const,
+          content: `Generate ${numLessons} course lessons as JSON array. Each lesson: {"title": "...", "description": "..."}
+          Return ONLY valid JSON array.`,
+        },
+        {
+          role: "user" as const,
+          content: `Create lessons for: ${courseTitle}\nDescription: ${courseDescription}`,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 1500,
+    });
+
+    const content = response.choices[0]?.message?.content || "";
+    try {
+      return JSON.parse(content);
+    } catch {
+      return Array.from({ length: Math.min(numLessons, 20) }, (_, i) => ({
+        title: `${courseTitle} - Lesson ${i + 1}`,
+        description: "Master concepts with structured learning",
+      }));
+    }
+  } catch (error) {
+    return Array.from({ length: Math.min(numLessons, 20) }, (_, i) => ({
+      title: `${courseTitle} - Lesson ${i + 1}`,
+      description: "Learn and practice key concepts",
+    }));
+  }
 }
 
+// Roadmap generation with LLM
 export async function generateRoadmapMilestones(
   roadmapName: string,
   roadmapDescription: string,
   numMilestones: number = 8
 ): Promise<Array<{ title: string; description: string }>> {
-  return Array.from({ length: Math.min(numMilestones, 12) }, (_, i) => ({
-    title: `${roadmapName} - Phase ${i + 1}`,
-    description: "Progress through structured learning with projects and assessments",
-  }));
+  try {
+    if (!HAS_GROQ) {
+      return Array.from({ length: Math.min(numMilestones, 12) }, (_, i) => ({
+        title: `${roadmapName} - Phase ${i + 1}`,
+        description: "Progress through structured milestones",
+      }));
+    }
+
+    const response = await groq.chat.completions.create({
+      model: "mixtral-8x7b-32768",
+      messages: [
+        {
+          role: "system" as const,
+          content: `Generate ${numMilestones} roadmap milestones as JSON array. Each: {"title": "...", "description": "..."}
+          Return ONLY valid JSON array.`,
+        },
+        {
+          role: "user" as const,
+          content: `Create milestones for: ${roadmapName}\nDescription: ${roadmapDescription}`,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 1500,
+    });
+
+    const content = response.choices[0]?.message?.content || "";
+    try {
+      return JSON.parse(content);
+    } catch {
+      return Array.from({ length: Math.min(numMilestones, 12) }, (_, i) => ({
+        title: `${roadmapName} - Phase ${i + 1}`,
+        description: "Progress and learn structured content",
+      }));
+    }
+  } catch (error) {
+    return Array.from({ length: Math.min(numMilestones, 12) }, (_, i) => ({
+      title: `${roadmapName} - Phase ${i + 1}`,
+      description: "Work through roadmap milestones",
+    }));
+  }
 }
