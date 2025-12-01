@@ -3,6 +3,7 @@ import compression from "compression";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { formatErrorResponse, sanitizeError } from "./errorHandler";
 
 const app = express();
 const httpServer = createServer(app);
@@ -169,28 +170,20 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     next();
   });
 
-  // Enhanced error handling with recovery
+  // Professional error handling - hide technical details from users
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
+    const isDev = process.env.NODE_ENV !== "production";
+    const sanitized = sanitizeError(err, isDev);
+    
     // Set appropriate cache headers for error responses
     res.set("Cache-Control", "no-cache, must-revalidate");
     res.set("Pragma", "no-cache");
 
-    // Don't expose stack traces in production
-    const isDev = process.env.NODE_ENV !== "production";
-    const response: any = { message };
-    if (isDev && err.stack) {
-      response.stack = err.stack;
-    }
+    // Log the actual error for debugging
+    log(`[${sanitized.status}] ${sanitized.logMessage}`, "error-handler");
 
-    res.status(status).json(response);
-    
-    // Log errors for monitoring
-    if (status >= 500) {
-      log(`ERROR: ${message}`, "error-handler");
-    }
+    // Send user-friendly response (no technical details exposed)
+    res.status(sanitized.status).json(formatErrorResponse(err, isDev));
   });
 
   // importantly only setup vite in development and after

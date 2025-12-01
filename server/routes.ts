@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertUserSchema, insertUserProfileSchema } from "@shared/schema";
 import { z } from "zod";
+import { formatErrorResponse } from "./errorHandler";
 
 declare global {
   namespace Express {
@@ -61,7 +62,7 @@ export async function registerRoutes(
       });
       res.json(updated);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -87,7 +88,7 @@ export async function registerRoutes(
         },
       });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -103,7 +104,7 @@ export async function registerRoutes(
       res.set("Cache-Control", "public, max-age=300"); // 5min browser cache
       res.json(arenas);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -127,7 +128,7 @@ export async function registerRoutes(
       res.set("Cache-Control", "public, max-age=300");
       res.json(challenges);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -143,7 +144,7 @@ export async function registerRoutes(
       const uc = await storage.startChallenge(req.user.id, req.params.id);
       res.json(uc);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -171,7 +172,7 @@ export async function registerRoutes(
         res.json(uc);
       }
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -189,7 +190,7 @@ export async function registerRoutes(
 
       res.json({ completed, inProgress, totalTime, averageScore });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -215,7 +216,7 @@ export async function registerRoutes(
       });
       res.json(project);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -241,7 +242,7 @@ export async function registerRoutes(
       });
       res.json(clan);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -251,7 +252,7 @@ export async function registerRoutes(
       const member = await storage.joinClan(req.params.clanId, req.user.id);
       res.json(member);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -273,7 +274,7 @@ export async function registerRoutes(
       const uq = await storage.assignQuest(req.user.id, req.params.questId, req.body.target || 1);
       res.json(uq);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -295,7 +296,7 @@ export async function registerRoutes(
       const uc = await storage.startCourse(req.user.id, req.params.courseId);
       res.json(uc);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -316,7 +317,7 @@ export async function registerRoutes(
       const lessons = await generateCourseLessons(course.title, course.description || "", 12);
       res.json(lessons);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json(formatErrorResponse(error));
     }
   });
 
@@ -344,7 +345,7 @@ export async function registerRoutes(
       });
       res.json(message);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -362,7 +363,7 @@ export async function registerRoutes(
       const limit = Math.min(parseInt(req.query.limit as string) || 10, 100);
       res.json(await getTechResources(page, limit));
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -373,7 +374,7 @@ export async function registerRoutes(
       if (!detail) return res.status(404).json({ error: "Resource not found" });
       res.json(detail);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -395,7 +396,7 @@ export async function registerRoutes(
       const ur = await storage.startRoadmap(req.user.id, req.params.roadmapId);
       res.json(ur);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -416,7 +417,7 @@ export async function registerRoutes(
       const milestones = await generateRoadmapMilestones(roadmap.name, roadmap.description || "", 8);
       res.json(milestones);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json(formatErrorResponse(error));
     }
   });
 
@@ -429,7 +430,7 @@ export async function registerRoutes(
       const leaderboard = await storage.getLeaderboard(category, period, limit);
       res.json(leaderboard);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -440,7 +441,7 @@ export async function registerRoutes(
       const rank = leaderboard.find(entry => entry.user.id === req.params.userId);
       res.json(rank || { error: "User not found" });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -456,7 +457,7 @@ export async function registerRoutes(
       })).sort((a: any, b: any) => b.totalXp - a.totalXp);
       res.json(clanLeaderboard);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -475,7 +476,7 @@ export async function registerRoutes(
       }));
       res.json(mentors);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -490,7 +491,7 @@ export async function registerRoutes(
         createdAt: new Date(),
       });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -515,7 +516,7 @@ export async function registerRoutes(
       
       res.json(recommended.slice(0, 5));
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -547,7 +548,7 @@ export async function registerRoutes(
 
       return res.json({ response });
     } catch (error: any) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -564,7 +565,7 @@ export async function registerRoutes(
       const response = await chatWithCopilot(question, []);
       res.json({ question, response, timestamp: Date.now() });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -583,7 +584,7 @@ export async function registerRoutes(
       const explanation = await explainCode(code);
       res.json({ explanation });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -602,7 +603,7 @@ export async function registerRoutes(
       const solution = await debugCode(code, error);
       res.json({ solution });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -621,7 +622,7 @@ export async function registerRoutes(
       const question = await generateQuizQuestion(topic, difficulty || "intermediate");
       res.json(question);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -635,7 +636,7 @@ export async function registerRoutes(
       const recommendations = await getSmartRecommendations(req.user.id);
       res.json(recommendations);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -647,7 +648,7 @@ export async function registerRoutes(
       const achievements = await getUserAchievements(req.user.id);
       res.json(achievements);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -660,7 +661,7 @@ export async function registerRoutes(
       const assessment = await assessSkillLevel(req.user.id, topic);
       res.json(assessment);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -672,7 +673,7 @@ export async function registerRoutes(
       const score = await calculateEngagementScore(req.user.id);
       res.json(score);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -683,7 +684,7 @@ export async function registerRoutes(
       const topics = await getTrendingTopics();
       res.json(topics);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -695,7 +696,7 @@ export async function registerRoutes(
       const path = await getPersonalizedLearningPath(req.user.id);
       res.json(path);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -707,7 +708,7 @@ export async function registerRoutes(
       const streak = await getDailyStreakInfo(req.user.id);
       res.json(streak);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -719,7 +720,7 @@ export async function registerRoutes(
       const suggestions = await getSmartChallengeSuggestions(req.user.id);
       res.json(suggestions);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -731,7 +732,7 @@ export async function registerRoutes(
       const comparison = await getPeerComparison(req.user.id);
       res.json(comparison);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -745,7 +746,7 @@ export async function registerRoutes(
       ];
       res.json(discussions);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -763,7 +764,7 @@ export async function registerRoutes(
       };
       res.json(discussion);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -790,7 +791,7 @@ export async function registerRoutes(
 
       res.json(review);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -810,7 +811,7 @@ export async function registerRoutes(
       };
       res.json(collaboration);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -842,7 +843,7 @@ export async function registerRoutes(
       ];
       res.json(insights);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -867,7 +868,7 @@ export async function registerRoutes(
       ];
       res.json(certifications);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -879,7 +880,7 @@ export async function registerRoutes(
       const { COMMUNITY_GUIDELINES } = await import("./moderation");
       res.json(COMMUNITY_GUIDELINES);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -905,7 +906,7 @@ export async function registerRoutes(
         res.json({ safe: true, score: 100, issues: [], recommendation: "approve" });
       }
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -922,7 +923,7 @@ export async function registerRoutes(
       const report = await reportContent(contentId, req.user.id, reason, description || "");
       res.json(report);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -934,7 +935,7 @@ export async function registerRoutes(
       const status = await getModerationStatus(req.user.id);
       res.json(status);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -947,7 +948,7 @@ export async function registerRoutes(
       });
       res.json({ success: true, profile });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -971,7 +972,7 @@ export async function registerRoutes(
       };
       res.json(report);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1010,7 +1011,7 @@ export async function registerRoutes(
 
       res.json({ valid: true, message: "Clan profile is appropriate for the community" });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1034,7 +1035,7 @@ export async function registerRoutes(
 
       res.json({ valid: true });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1049,7 +1050,7 @@ export async function registerRoutes(
       const challenge = await generateAIChallenge(topic || "Algorithm", difficulty || "medium");
       res.json(challenge);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1073,7 +1074,7 @@ export async function registerRoutes(
         newXP: (profile?.xp || 0) + (judgment.verdict === "user_wins" ? 200 : judgment.verdict === "tie" ? 100 : 50),
       });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1084,7 +1085,7 @@ export async function registerRoutes(
       const leaderboard = await getAIChallengeLeaderboard();
       res.json(leaderboard);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1099,7 +1100,7 @@ export async function registerRoutes(
       const session = await createShadowSession(req.user.id, projectId || "proj_new", teamSize || 3);
       res.json(session);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1110,7 +1111,7 @@ export async function registerRoutes(
       const contributions = await getShadowTeammateContributions(req.params.sessionId);
       res.json(contributions);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1127,7 +1128,7 @@ export async function registerRoutes(
       
       res.json(revealed);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1138,7 +1139,7 @@ export async function registerRoutes(
       const stats = await getShadowSessionStats(req.params.sessionId);
       res.json(stats);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1151,7 +1152,7 @@ export async function registerRoutes(
       const speedRound = await shadowSpeedRound(sessionId || `session_${Date.now()}`, minutesLimit || 15);
       res.json(speedRound);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1176,7 +1177,7 @@ export async function registerRoutes(
         achievement: completionRate === 100 ? "Perfect Speed Run" : "Speed Mastery",
       });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1188,7 +1189,7 @@ export async function registerRoutes(
       const world = await createTechWorld(req.user.id);
       res.json(world);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1198,7 +1199,7 @@ export async function registerRoutes(
       const { movePlayerInWorld } = await import("./techWorld");
       res.json(await movePlayerInWorld(req.user.id, req.params.worldId, req.body.position));
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1207,7 +1208,7 @@ export async function registerRoutes(
       const { getWorldLeaderboard } = await import("./techWorld");
       res.json(await getWorldLeaderboard(req.params.worldId));
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1219,7 +1220,7 @@ export async function registerRoutes(
       await storage.addXp(req.user.id, result.xpEarned);
       res.json(result);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1229,7 +1230,7 @@ export async function registerRoutes(
       const { getTechSpotlight } = await import("./techSpotlight");
       res.json(await getTechSpotlight());
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1238,7 +1239,7 @@ export async function registerRoutes(
       const { getGithubTrending } = await import("./techSpotlight");
       res.json(await getGithubTrending());
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1247,7 +1248,7 @@ export async function registerRoutes(
       const { getResearchPapers } = await import("./techSpotlight");
       res.json(await getResearchPapers());
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1256,7 +1257,7 @@ export async function registerRoutes(
       const { getStartupIntelligence } = await import("./techSpotlight");
       res.json(await getStartupIntelligence());
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1265,7 +1266,7 @@ export async function registerRoutes(
       const { getLatestAITools } = await import("./techSpotlight");
       res.json(await getLatestAITools());
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1274,7 +1275,7 @@ export async function registerRoutes(
       const { getNewTechReleases } = await import("./techSpotlight");
       res.json(await getNewTechReleases());
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1285,7 +1286,7 @@ export async function registerRoutes(
       const { createSwarmProject } = await import("./swarmProjects");
       res.json(await createSwarmProject(req.user.id, req.body.title, req.body.description));
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1295,7 +1296,7 @@ export async function registerRoutes(
       const { joinSwarmProject } = await import("./swarmProjects");
       res.json(await joinSwarmProject(req.user.id, req.params.projectId, req.body.skillArea));
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1304,7 +1305,7 @@ export async function registerRoutes(
       const { getSwarmProjectTasks } = await import("./swarmProjects");
       res.json(await getSwarmProjectTasks(req.params.projectId));
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1316,7 +1317,7 @@ export async function registerRoutes(
       await storage.addXp(req.user.id, 500);
       res.json(result);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1325,7 +1326,7 @@ export async function registerRoutes(
       const { getSwarmProjectLeaderboard } = await import("./swarmProjects");
       res.json(await getSwarmProjectLeaderboard());
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1334,7 +1335,7 @@ export async function registerRoutes(
       const { getSwarmAIAnalysis } = await import("./swarmProjects");
       res.json(await getSwarmAIAnalysis(req.params.projectId));
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1345,7 +1346,7 @@ export async function registerRoutes(
       const avatar = await storage.getUserAvatar(req.user.id);
       res.json(avatar || { message: "No avatar created yet" });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1361,7 +1362,7 @@ export async function registerRoutes(
       });
       res.json(avatar);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1371,7 +1372,7 @@ export async function registerRoutes(
       const avatar = await storage.updateAvatar(req.user.id, req.body);
       res.json(avatar);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1381,7 +1382,7 @@ export async function registerRoutes(
       const leaderboard = await storage.getMetaverseLeaderboard();
       res.json(leaderboard);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1392,7 +1393,7 @@ export async function registerRoutes(
       const fusions = await storage.getUserCodeFusions(req.user.id);
       res.json(fusions);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1412,7 +1413,7 @@ export async function registerRoutes(
       });
       res.status(201).json(fusion);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1422,7 +1423,7 @@ export async function registerRoutes(
       const fusion = await storage.updateCodeFusion(req.params.id, req.body);
       res.json(fusion);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1432,7 +1433,7 @@ export async function registerRoutes(
       await storage.deleteCodeFusion(req.params.id);
       res.json({ success: true });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 
@@ -1442,7 +1443,7 @@ export async function registerRoutes(
       const fusions = await storage.getPublicCodeFusions(limit);
       res.json(fusions);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json(formatErrorResponse(error));
     }
   });
 

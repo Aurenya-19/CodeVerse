@@ -1,64 +1,50 @@
 import React, { ReactNode } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
 }
 
-interface ErrorBoundaryState {
+interface State {
   hasError: boolean;
-  error: Error | null;
+  error?: Error;
 }
 
-export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends React.Component<ErrorBoundaryProps, State> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error) {
-    console.error("ErrorBoundary caught:", error);
+    // Log to console in dev
+    console.error("Error caught by boundary:", error);
+    // In production, you could send this to an error tracking service
   }
-
-  resetError = () => {
-    this.setState({ hasError: false, error: null });
-  };
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex items-center justify-center min-h-screen p-4">
-          <Card className="w-full max-w-md border-destructive">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-destructive" />
-                <CardTitle>Something went wrong</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                {this.state.error?.message || "An unexpected error occurred"}
-              </p>
-              <div className="flex gap-2">
-                <Button onClick={this.resetError} variant="default" className="flex-1">
-                  Try again
-                </Button>
-                <Button 
-                  onClick={() => window.location.href = "/"} 
-                  variant="outline" 
-                  className="flex-1"
-                >
-                  Go Home
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="flex h-screen flex-col items-center justify-center gap-4 px-4">
+          <AlertCircle className="h-16 w-16 text-red-500" />
+          <h1 className="text-2xl font-bold">Something went wrong</h1>
+          <p className="text-center text-muted-foreground max-w-md">
+            We're sorry, but something unexpected happened. Our team has been notified.
+            Please try refreshing the page.
+          </p>
+          <Button
+            onClick={() => {
+              this.setState({ hasError: false });
+              window.location.reload();
+            }}
+          >
+            Refresh Page
+          </Button>
         </div>
       );
     }
