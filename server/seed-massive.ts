@@ -54,7 +54,6 @@ export async function seedMassiveContent() {
           hints: [`Hint 1: Think about edge cases`, `Hint 2: Optimize for performance`, `Hint 3: Test thoroughly`],
           tags: [topic, "practice", "debug"],
           isDaily: i % 7 === 0,
-          type: "quest",
           isWeekly: i % 14 === 0,
         });
       }
@@ -80,7 +79,6 @@ export async function seedMassiveContent() {
           xpReward: 25 * (i + 1),
           type: "daily",
           isDaily: true,
-          type: "quest",
           isWeekly: i % 2 === 0,
           difficulty: i < 3 ? "beginner" : i < 7 ? "intermediate" : "expert",
           tags: ["daily", "quick"],
