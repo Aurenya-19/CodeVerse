@@ -1798,9 +1798,6 @@ export async function registerRoutes(
     }
   });
 
-  return httpServer;
-}
-
 
   // ===== PROFILE ROUTES =====
   app.post("/api/profile/setup", async (req, res) => {
@@ -1821,3 +1818,4 @@ export async function registerRoutes(
     }
   });
 
+  return httpServer;
