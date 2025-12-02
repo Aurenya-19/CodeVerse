@@ -33,6 +33,8 @@ import {
   type CommunityBadge,
   type UserBadge,
   type AiRecommendation,
+  type UserActivity,
+  type UserPerformance,
   users,
   userProfiles,
   arenas,
@@ -64,6 +66,9 @@ import {
   competitions,
   competitionParticipants,
   competitionLeaderboard,
+  userActivities,
+  userPerformance,
+  userStats,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, and, or, like, sql, inArray } from "drizzle-orm";
@@ -445,6 +450,37 @@ export class DatabaseStorage implements IStorage {
     }
     const [created] = await db.insert(userProfiles).values({ ...data, userId }).returning();
     return created;
+  }
+
+  async recordActivity(userId: string, type: string, description: string, xpGained: number = 0, arenaId?: string, challengeId?: string): Promise<UserActivity> {
+    const [activity] = await db.insert(userActivities).values({
+      userId,
+      type,
+      description,
+      xpGained,
+      arenaId,
+      challengeId,
+    }).returning();
+    return activity;
+  }
+
+  async getUserActivities(userId: string, limit = 20): Promise<UserActivity[]> {
+    return db.select().from(userActivities).where(eq(userActivities.userId, userId)).orderBy(desc(userActivities.timestamp)).limit(limit);
+  }
+
+  async updateUserPerformance(userId: string, metrics: any): Promise<UserPerformance> {
+    const existing = await db.select().from(userPerformance).where(eq(userPerformance.userId, userId));
+    if (existing.length > 0) {
+      const [updated] = await db.update(userPerformance).set({ ...metrics, updatedAt: new Date() }).where(eq(userPerformance.userId, userId)).returning();
+      return updated;
+    }
+    const [created] = await db.insert(userPerformance).values({ userId, ...metrics }).returning();
+    return created;
+  }
+
+  async getUserPerformance(userId: string): Promise<UserPerformance | undefined> {
+    const [perf] = await db.select().from(userPerformance).where(eq(userPerformance.userId, userId));
+    return perf;
   }
 }
 

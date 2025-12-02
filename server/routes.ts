@@ -75,6 +75,8 @@ export async function registerRoutes(
       const quests = await storage.getQuests(10);
       const dailyChallenges = await storage.getDailyChallenges();
       const arenas = await storage.getArenas();
+      const recentActivities = await storage.getUserActivities(req.user.id, 10);
+      const performance = await storage.getUserPerformance(req.user.id);
       
       const dailyQuests = quests.slice(0, 3).map((quest: any) => ({
         ...quest,
@@ -88,11 +90,24 @@ export async function registerRoutes(
         dailyQuests,
         dailyChallenges,
         arenas,
+        recentActivity: recentActivities.map((a) => ({
+          type: a.type,
+          description: a.description,
+          xp: a.xpGained,
+          timestamp: a.timestamp,
+        })),
         stats: {
           streak: profile?.dailyStreak || 0,
-          challengesCompleted: profile?.totalChallengesCompleted || 0,
+          challengesCompleted: performance?.totalChallengesCompleted || profile?.totalChallengesCompleted || 0,
           totalXp: profile?.xp || 0,
           rank: 100,
+        },
+        performance: {
+          totalActivities: performance?.totalActivities || 0,
+          totalChallengesAttempted: performance?.totalChallengesAttempted || 0,
+          totalChallengesCompleted: performance?.totalChallengesCompleted || 0,
+          successRate: performance?.successRate || 0,
+          averageScore: performance?.averageScore || 0,
         },
       });
     } catch (error: any) {
@@ -161,9 +176,28 @@ export async function registerRoutes(
       const uc = await storage.submitChallenge(req.user.id, req.params.id, code, score);
       await storage.addXp(req.user.id, score);
       
+      // Record activity
+      const challenge = await storage.getChallengeById(req.params.id);
+      await storage.recordActivity(req.user.id, "challenge_completed", `Completed challenge: ${challenge?.title}`, score, challenge?.arenaId, req.params.id);
+      
+      // Update performance metrics
+      const userChallenges = await storage.getUserChallenges(req.user.id);
+      const completedCount = userChallenges.filter((c) => c.status === "completed").length;
+      const avgScore = userChallenges.length > 0 
+        ? Math.round(userChallenges.reduce((sum, c) => sum + (c.score || 0), 0) / userChallenges.length)
+        : 0;
+      
+      await storage.updateUserPerformance(req.user.id, {
+        totalChallengesAttempted: userChallenges.length,
+        totalChallengesCompleted: completedCount,
+        successRate: Math.round((completedCount / Math.max(userChallenges.length, 1)) * 100),
+        averageScore: avgScore,
+        totalXpEarned: (await storage.getUserProfile(req.user.id))?.xp || 0,
+        lastActivityDate: new Date(),
+      });
+      
       // Check if challenge is completed
       if (uc?.status === "completed") {
-        const challenge = await storage.getChallengeById(req.params.id);
         const profile = await storage.getUserProfile(req.user.id);
         res.json({ 
           ...uc, 

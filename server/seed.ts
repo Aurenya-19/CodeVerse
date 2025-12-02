@@ -237,7 +237,14 @@ export async function seedDatabase() {
         activeUsers: 289,
         totalMissions: 44,
       },
-    ]).onConflictDoNothing();
+    ]).onConflictDoUpdate({
+      target: arenas.slug,
+      set: { 
+        imageUrl: sql`EXCLUDED."image_url"`,
+        activeUsers: sql`EXCLUDED."active_users"`,
+        totalMissions: sql`EXCLUDED."total_missions"`,
+      }
+    });
 
     // Seed MASSIVE challenges (80+ total)
     const challengeList = [];
