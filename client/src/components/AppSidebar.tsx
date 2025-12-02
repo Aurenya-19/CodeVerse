@@ -31,7 +31,7 @@ import {
   User,
   Flame,
   BarChart3,
-  Microphone,
+  Radio,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -55,7 +55,7 @@ export function AppSidebar() {
     { title: t("navigation.quests"), url: "/quests", icon: Target },
     { title: "Competitions", url: "/competitions", icon: Flame },
     { title: "Analytics", url: "/analytics", icon: BarChart3 },
-    { title: "Podcasts", url: "/podcasts", icon: Microphone },
+    { title: "Podcasts", url: "/podcasts", icon: Radio },
     { title: t("navigation.leaderboard"), url: "/leaderboards", icon: Trophy },
     { title: t("navigation.mentors"), url: "/mentors", icon: Users },
     { title: t("navigation.messages"), url: "/messages", icon: MessageSquare },
