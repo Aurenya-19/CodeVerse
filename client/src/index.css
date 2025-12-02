@@ -171,6 +171,19 @@
     @apply border-border;
   }
 
+  /* Image Cards Styling */
+  img {
+    @apply rounded-md object-cover;
+  }
+
+  .card-image {
+    @apply h-48 w-full overflow-hidden rounded-lg;
+  }
+
+  .card-image img {
+    @apply w-full h-full object-cover transition-transform duration-300 hover:scale-105;
+  }
+
   /* Professional Cinema Galaxy Background */
   @keyframes distant-twinkle {
     0%, 100% { opacity: 0.4; }

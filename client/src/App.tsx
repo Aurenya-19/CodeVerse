@@ -46,6 +46,8 @@ import ResourceDetail from "@/pages/ResourceDetail";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 import Metaverse from "@/pages/Metaverse";
+import News from "@/pages/News";
+import Challenges from "@/pages/Challenges";
 import CodeFusion from "@/pages/CodeFusion";
 import Competitions from "@/pages/Competitions";
 import CompetitionDetail from "@/pages/CompetitionDetail";
@@ -212,6 +214,12 @@ function Router() {
       </Route>
       <Route path="/metaverse">
         <ProtectedRoute component={Metaverse} />
+      </Route>
+      <Route path="/news">
+        <ProtectedRoute component={News} />
+      </Route>
+      <Route path="/challenges">
+        <ProtectedRoute component={Challenges} />
       </Route>
       <Route path="/codefusion">
         <ProtectedRoute component={CodeFusion} />
