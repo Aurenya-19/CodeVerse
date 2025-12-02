@@ -428,16 +428,45 @@ export async function registerRoutes(
     }
   });
 
-  // Roadmaps
+  // Roadmaps - Smart Personalization Based on Interests
   app.get("/api/roadmaps", async (req, res) => {
-    const roadmaps = await storage.getRoadmaps();
-    res.json(roadmaps);
+    try {
+      const { massiveRoadmaps } = await import("./massiveContent");
+      const user = req.user;
+      
+      // If user is authenticated, personalize roadmaps based on interests
+      if (user) {
+        const profile = await storage.getUserProfile(user.id);
+        const interests = profile?.interests || [];
+        
+        if (interests.length > 0) {
+          // Prioritize roadmaps matching user interests
+          const prioritized = massiveRoadmaps.sort((a: any, b: any) => {
+            const aMatches = interests.some(i => a.slug.toLowerCase().includes(i.toLowerCase()) || a.skills.some((s: string) => i.toLowerCase().includes(s.toLowerCase())));
+            const bMatches = interests.some(i => b.slug.toLowerCase().includes(i.toLowerCase()) || b.skills.some((s: string) => i.toLowerCase().includes(s.toLowerCase())));
+            return (aMatches ? -1 : 0) - (bMatches ? -1 : 0);
+          });
+          res.set("Cache-Control", "public, max-age=3600");
+          return res.json(prioritized);
+        }
+      }
+      
+      // Return all roadmaps if not authenticated or no interests
+      res.set("Cache-Control", "public, max-age=3600");
+      res.json(massiveRoadmaps);
+    } catch (error: any) {
+      res.status(400).json(formatErrorResponse(error));
+    }
   });
 
   app.get("/api/user/roadmaps", async (req, res) => {
     if (!req.user) return res.status(401).json({ error: "Not authenticated" });
-    const roadmaps = await storage.getUserRoadmaps(req.user.id);
-    res.json(roadmaps);
+    try {
+      const roadmaps = await storage.getUserRoadmaps(req.user.id);
+      res.json(roadmaps || []);
+    } catch (error: any) {
+      res.status(400).json(formatErrorResponse(error));
+    }
   });
 
   app.post("/api/roadmaps/:roadmapId/start", async (req, res) => {
