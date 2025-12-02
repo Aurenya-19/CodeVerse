@@ -1801,3 +1801,23 @@ export async function registerRoutes(
   return httpServer;
 }
 
+
+  // ===== PROFILE ROUTES =====
+  app.post("/api/profile/setup", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { penName, interests } = req.body;
+      if (!penName || !penName.trim()) {
+        return res.status(400).json({ error: "Pen name required" });
+      }
+      const updated = await storage.updateUser(req.user.id, {
+        penName: penName.trim(),
+        profileSetupCompleted: true
+      });
+      await storage.updateUserProfile(req.user.id, { interests });
+      res.json({ success: true, user: updated });
+    } catch (error: any) {
+      res.status(400).json(formatErrorResponse(error));
+    }
+  });
+

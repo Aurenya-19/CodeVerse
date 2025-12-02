@@ -73,8 +73,8 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
-  getUserProfile(userId: string): Promise<UserProfile | undefined>;
-  upsertUserProfile(profile: InsertUserProfile & { userId: string }): Promise<UserProfile>;
+  getUserProfile(user_id: string): Promise<UserProfile | undefined>;
+  upsertUserProfile(profile: InsertUserProfile & { user_id: string }): Promise<UserProfile>;
   getArenas(limit?: number): Promise<Arena[]>;
   getArenaBySlug(slug: string): Promise<Arena | undefined>;
   getChallengesByArena(arenaId: string, limit?: number): Promise<Challenge[]>;
@@ -84,7 +84,7 @@ export interface IStorage {
   getCourses(limit?: number): Promise<Course[]>;
   getCompetitions(limit?: number): Promise<any[]>;
   getCompetition(id: string): Promise<any>;
-  joinCompetition(competitionId: string, userId: string): Promise<any>;
+  joinCompetition(competitionId: string, user_id: string): Promise<any>;
   submitCompetitionSolution(data: any): Promise<any>;
   getCompetitionLeaderboard(competitionId: string): Promise<any[]>;
 }
@@ -107,12 +107,12 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async getUserProfile(userId: string): Promise<UserProfile | undefined> {
+  async getUserProfile(user_id: string): Promise<UserProfile | undefined> {
     const [profile] = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId));
     return profile;
   }
 
-  async upsertUserProfile(profile: InsertUserProfile & { userId: string }): Promise<UserProfile> {
+  async upsertUserProfile(profile: InsertUserProfile & { user_id: string }): Promise<UserProfile> {
     const existing = await this.getUserProfile(profile.userId);
     if (existing) {
       const [updated] = await db
@@ -165,7 +165,7 @@ export class DatabaseStorage implements IStorage {
     return comp;
   }
 
-  async joinCompetition(competitionId: string, userId: string): Promise<any> {
+  async joinCompetition(competitionId: string, user_id: string): Promise<any> {
     const [participant] = await db.insert(competitionParticipants).values({ competitionId, userId }).returning();
     return participant;
   }
@@ -173,7 +173,7 @@ export class DatabaseStorage implements IStorage {
   async submitCompetitionSolution(data: any): Promise<any> {
     const [submission] = await db.insert(competitionLeaderboard).values({
       competitionId: data.competitionId,
-      userId: data.userId,
+      user_id: data.userId,
       score: 0
     }).returning();
     return submission;
@@ -246,11 +246,11 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(feedItems).limit(limit).orderBy(desc(feedItems.createdAt));
   }
 
-  async getFeedItemsByUserId(userId: string, limit = 20): Promise<FeedItem[]> {
+  async getFeedItemsByUserId(user_id: string, limit = 20): Promise<FeedItem[]> {
     return db.select().from(feedItems).where(eq(feedItems.userId, userId)).limit(limit).orderBy(desc(feedItems.createdAt));
   }
 
-  async getMessages(userId: string, limit = 50): Promise<Message[]> {
+  async getMessages(user_id: string, limit = 50): Promise<Message[]> {
     return db.select().from(messages).where(or(eq(messages.recipientId, userId), eq(messages.senderId, userId))).limit(limit).orderBy(desc(messages.createdAt));
   }
 
@@ -272,46 +272,46 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(roadmaps).limit(limit);
   }
 
-  async getUserAvatar(userId: string): Promise<UserAvatar | undefined> {
+  async getUserAvatar(user_id: string): Promise<UserAvatar | undefined> {
     const [avatar] = await db.select().from(userAvatars).where(eq(userAvatars.userId, userId));
     return avatar;
   }
 
-  async getUserChallenges(userId: string, limit = 50): Promise<UserChallenge[]> {
+  async getUserChallenges(user_id: string, limit = 50): Promise<UserChallenge[]> {
     return db.select().from(userChallenges).where(eq(userChallenges.userId, userId)).limit(limit);
   }
 
-  async getUserClans(userId: string): Promise<Clan[]> {
+  async getUserClans(user_id: string): Promise<Clan[]> {
     const clans_list = await db.select().from(clans).innerJoin(clanMembers, eq(clans.id, clanMembers.clanId)).where(eq(clanMembers.userId, userId));
     return clans_list.map(c => c.clans);
   }
 
-  async getUserCodeFusions(userId: string, limit = 50): Promise<CodeFusion[]> {
+  async getUserCodeFusions(user_id: string, limit = 50): Promise<CodeFusion[]> {
     return db.select().from(codeFusions).where(eq(codeFusions.userId, userId)).limit(limit);
   }
 
-  async getUserCourses(userId: string, limit = 50): Promise<UserCourse[]> {
+  async getUserCourses(user_id: string, limit = 50): Promise<UserCourse[]> {
     return db.select().from(userCourses).where(eq(userCourses.userId, userId)).limit(limit);
   }
 
-  async getUserProjects(userId: string, limit = 50): Promise<Project[]> {
+  async getUserProjects(user_id: string, limit = 50): Promise<Project[]> {
     return db.select().from(projects).where(eq(projects.userId, userId)).limit(limit);
   }
 
-  async getUserQuests(userId: string, limit = 50): Promise<UserQuest[]> {
+  async getUserQuests(user_id: string, limit = 50): Promise<UserQuest[]> {
     return db.select().from(userQuests).where(eq(userQuests.userId, userId)).limit(limit);
   }
 
-  async getUserRoadmaps(userId: string, limit = 20): Promise<UserRoadmap[]> {
+  async getUserRoadmaps(user_id: string, limit = 20): Promise<UserRoadmap[]> {
     return db.select().from(userRoadmaps).where(eq(userRoadmaps.userId, userId)).limit(limit);
   }
 
-  async joinClan(clanId: string, userId: string): Promise<ClanMember> {
+  async joinClan(clanId: string, user_id: string): Promise<ClanMember> {
     const [member] = await db.insert(clanMembers).values({ clanId, userId, role: "member" }).returning();
     return member;
   }
 
-  async markMessagesRead(userId: string, messageIds: string[]): Promise<boolean> {
+  async markMessagesRead(user_id: string, messageIds: string[]): Promise<boolean> {
     await db.update(messages).set({ isRead: true }).where(and(eq(messages.recipientId, userId), inArray(messages.id, messageIds)));
     return true;
   }
@@ -321,32 +321,32 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async startChallenge(userId: string, challengeId: string): Promise<UserChallenge> {
+  async startChallenge(user_id: string, challengeId: string): Promise<UserChallenge> {
     const [uc] = await db.insert(userChallenges).values({ userId, challengeId, status: "in_progress" } as any).returning();
     return uc;
   }
 
-  async startCourse(userId: string, courseId: string): Promise<UserCourse> {
+  async startCourse(user_id: string, courseId: string): Promise<UserCourse> {
     const [uc] = await db.insert(userCourses).values({ userId, courseId, status: "in_progress" } as any).returning();
     return uc;
   }
 
-  async startQuest(userId: string, questId: string): Promise<UserQuest> {
+  async startQuest(user_id: string, questId: string): Promise<UserQuest> {
     const [uq] = await db.insert(userQuests).values({ userId, questId, status: "assigned" } as any).returning();
     return uq;
   }
 
-  async startRoadmap(userId: string, roadmapId: string): Promise<UserRoadmap> {
+  async startRoadmap(user_id: string, roadmapId: string): Promise<UserRoadmap> {
     const [ur] = await db.insert(userRoadmaps).values({ userId, roadmapId, currentMilestone: 0 } as any).returning();
     return ur;
   }
 
-  async submitChallenge(userId: string, challengeId: string, code: string, score: number): Promise<UserChallenge> {
+  async submitChallenge(user_id: string, challengeId: string, code: string, score: number): Promise<UserChallenge> {
     const [uc] = await db.update(userChallenges).set({ status: score >= 70 ? "completed" : "in_progress", submittedCode: code, score }).where(and(eq(userChallenges.userId, userId), eq(userChallenges.challengeId, challengeId))).returning();
     return uc;
   }
 
-  async updateAvatar(userId: string, avatar: any): Promise<UserAvatar> {
+  async updateAvatar(user_id: string, avatar: any): Promise<UserAvatar> {
     const existing = await this.getUserAvatar(userId);
     if (existing) {
       const [updated] = await db.update(userAvatars).set(avatar).where(eq(userAvatars.userId, userId)).returning();
@@ -361,7 +361,7 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async updateUserProfile(userId: string, profile: any): Promise<UserProfile> {
+  async updateUserProfile(user_id: string, profile: any): Promise<UserProfile> {
     const [updated] = await db.update(userProfiles).set(profile).where(eq(userProfiles.userId, userId)).returning();
     return updated;
   }
@@ -381,7 +381,7 @@ export class DatabaseStorage implements IStorage {
     return sub;
   }
 
-  async getLearningReport(userId: string): Promise<LearningReport | undefined> {
+  async getLearningReport(user_id: string): Promise<LearningReport | undefined> {
     const [report] = await db.select().from(learningReports).where(eq(learningReports.userId, userId));
     return report;
   }
@@ -396,7 +396,7 @@ export class DatabaseStorage implements IStorage {
     return group;
   }
 
-  async joinGroup(groupId: string, userId: string): Promise<GroupMember> {
+  async joinGroup(groupId: string, user_id: string): Promise<GroupMember> {
     const [member] = await db.insert(groupMembers).values({ groupId, userId, role: "member" }).returning();
     return member;
   }
@@ -405,7 +405,7 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(groupMessages).where(eq(groupMessages.groupId, groupId)).limit(limit).orderBy(desc(groupMessages.createdAt));
   }
 
-  async createGroupMessage(groupId: string, userId: string, content: string): Promise<GroupMessage> {
+  async createGroupMessage(groupId: string, user_id: string, content: string): Promise<GroupMessage> {
     const [msg] = await db.insert(groupMessages).values({ groupId, userId, content }).returning();
     return msg;
   }
@@ -415,16 +415,16 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(advancedChallenges).limit(limit);
   }
 
-  async getUserBadges(userId: string): Promise<UserBadge[]> {
+  async getUserBadges(user_id: string): Promise<UserBadge[]> {
     return db.select().from(userBadges).where(eq(userBadges.userId, userId));
   }
 
-  async awardBadge(userId: string, badgeId: string): Promise<UserBadge | undefined> {
+  async awardBadge(user_id: string, badgeId: string): Promise<UserBadge | undefined> {
     const [badge] = await db.insert(userBadges).values({ userId, badgeId }).onConflictDoNothing().returning();
     return badge;
   }
 
-  async getSolutionSubmissions(userId: string, limit = 50): Promise<SolutionSubmission[]> {
+  async getSolutionSubmissions(user_id: string, limit = 50): Promise<SolutionSubmission[]> {
     return db.select().from(solutionSubmissions).where(eq(solutionSubmissions.userId, userId)).limit(limit);
   }
 
@@ -434,3 +434,73 @@ export class DatabaseStorage implements IStorage {
 }
 
 export const storage = new DatabaseStorage();
+
+  // ===== MISSING METHODS - STUB IMPLEMENTATIONS =====
+  async addXp(user_id: string, amount: number): Promise<void> {
+    const profile = await this.getUserProfile(userId);
+    if (profile) {
+      const currentXp = (profile.xp || 0) + amount;
+      const currentLevel = Math.floor(currentXp / 500) + 1;
+      await db.update(userProfiles)
+        .set({ xp: currentXp, level: currentLevel })
+        .where(eq(userProfiles.userId, userId));
+    }
+  }
+
+  async getProjects(limit?: number): Promise<any[]> {
+    return db.select().from(projects).limit(limit || 10);
+  }
+
+  async getClans(limit?: number): Promise<any[]> {
+    return db.select().from(clans).limit(limit || 10);
+  }
+
+  async assignQuest(user_id: string, questId: string): Promise<any> {
+    return db.insert(userQuests).values({ userId, questId }).returning();
+  }
+
+  async getConversations(user_id: string): Promise<any[]> {
+    return db.select().from(aiChats).where(eq(aiChats.userId, userId));
+  }
+
+  async sendMessage(senderId: string, receiver_id: string, content: string): Promise<any> {
+    return db.insert(messages).values({ senderId, receiverId, content }).returning();
+  }
+
+  async getLeaderboard(limit?: number): Promise<any[]> {
+    return db.select()
+      .from(userProfiles)
+      .orderBy(desc(userProfiles.xp))
+      .limit(limit || 100);
+  }
+
+  async getMetaverseLeaderboard(limit?: number): Promise<any[]> {
+    return db.select()
+      .from(userProfiles)
+      .orderBy(desc(userProfiles.xp))
+      .limit(limit || 50);
+  }
+
+  async deleteCodeFusion(id: string): Promise<void> {
+    await db.delete(codeFusions).where(eq(codeFusions.id, id));
+  }
+
+  async getGroupRecommendations(user_id: string): Promise<any[]> {
+    return db.select().from(privateGroups).limit(5);
+  }
+
+  async updateUser(id: string, data: any): Promise<any> {
+    const [updated] = await db.update(users).set(data).where(eq(users.id, id)).returning();
+    return updated;
+  }
+
+  async updateUserProfile(user_id: string, data: any): Promise<any> {
+    const existing = await this.getUserProfile(userId);
+    if (existing) {
+      const [updated] = await db.update(userProfiles).set(data).where(eq(userProfiles.userId, userId)).returning();
+      return updated;
+    }
+    const [created] = await db.insert(userProfiles).values({ ...data, userId }).returning();
+    return created;
+  }
+

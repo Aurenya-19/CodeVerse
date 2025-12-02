@@ -50,6 +50,7 @@ import CompetitionDetail from "@/pages/CompetitionDetail";
 import CompetitionLeaderboard from "@/pages/CompetitionLeaderboard";
 import CourseAnalytics from "@/pages/CourseAnalytics";
 import Podcasts from "@/pages/Podcasts";
+import ProfileSetup from "@/pages/ProfileSetup";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const style = {
@@ -221,6 +222,9 @@ function Router() {
       </Route>
       <Route path="/podcasts">
         <ProtectedRoute component={Podcasts} />
+      </Route>
+      <Route path="/profile-setup">
+        <ProtectedRoute component={ProfileSetup} />
       </Route>
       <Route component={NotFound} />
     </Switch>
