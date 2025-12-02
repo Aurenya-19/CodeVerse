@@ -177,9 +177,154 @@ export const massiveRoadmaps = [
   },
 ];
 
-// COMPETITIONS - Global Contests & Tournaments
-export const massiveCompetitions = [
-  // ACTIVE COMPETITIONS
+// COMPETITIONS - Global Contests & Tournaments (Dynamic Status Based on Current Date)
+function generateDynamicCompetitions() {
+  const now = new Date();
+  
+  // Base competitions with relative dates
+  const baseCompetitions = [
+    {
+      title: "Global AI Challenge 2024",
+      description: "Build an AI model that predicts tech trends. Top 10 get featured on DevPost.",
+      type: "ml",
+      difficulty: "hard",
+      daysOffset: { start: -15, end: 15 },
+      prizePool: 50000,
+      prizes: ["$10,000 - 1st Place", "$5,000 - 2nd Place", "$2,500 - 3rd Place"],
+      imageUrl: "https://images.unsplash.com/photo-1677442d019cecf3da12172d10e3066faf3d831f3?w=500",
+      tags: ["AI", "Machine Learning", "Data Science"],
+    },
+    {
+      title: "Web3 DApp Hackathon",
+      description: "Create a decentralized application on Ethereum. Win ETH prizes + incubator spot.",
+      type: "blockchain",
+      difficulty: "extreme",
+      daysOffset: { start: -10, end: 20 },
+      prizePool: 100000,
+      prizes: ["$20,000 + Incubator - 1st Place", "$10,000 - 2nd Place", "$5,000 - 3rd Place"],
+      imageUrl: "https://images.unsplash.com/photo-1639322537228-f710d846310e?w=500",
+      tags: ["Blockchain", "Smart Contracts", "Web3", "Ethereum"],
+    },
+    {
+      title: "Cybersecurity CTF 2024",
+      description: "Capture The Flag competition. Find vulnerabilities, exploit systems, defend networks.",
+      type: "security",
+      difficulty: "extreme",
+      daysOffset: { start: -5, end: 25 },
+      prizePool: 75000,
+      prizes: ["$15,000 - Team 1st", "$8,000 - Team 2nd", "$4,000 - Team 3rd"],
+      imageUrl: "https://images.unsplash.com/photo-1550751827-4bd582f6de8c?w=500",
+      tags: ["Security", "CTF", "Hacking", "Defense"],
+    },
+    {
+      title: "Full-Stack Web Dev Sprint",
+      description: "Build a complete web application in 2 weeks. React + Node.js + Database required.",
+      type: "web",
+      difficulty: "medium",
+      daysOffset: { start: -8, end: 22 },
+      prizePool: 25000,
+      prizes: ["$8,000 - 1st Place", "$4,000 - 2nd Place", "$2,000 - 3rd Place"],
+      imageUrl: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500",
+      tags: ["Web Development", "React", "Node.js", "Full-Stack"],
+    },
+    {
+      title: "Quantum Computing Challenge",
+      description: "Solve quantum algorithms using Qiskit. Theoretical and practical problems.",
+      type: "quantum",
+      difficulty: "extreme",
+      daysOffset: { start: 10, end: 40 },
+      prizePool: 50000,
+      prizes: ["$15,000 - 1st Place", "$8,000 - 2nd Place", "$4,000 - 3rd Place"],
+      imageUrl: "https://images.unsplash.com/photo-1635070041078-e5b94039d226?w=500",
+      tags: ["Quantum", "Physics", "Algorithms"],
+    },
+    {
+      title: "Mobile App Innovation Sprint",
+      description: "Create iOS/Android app solving real-world problems. 3-week sprint.",
+      type: "mobile",
+      difficulty: "hard",
+      daysOffset: { start: 15, end: 36 },
+      prizePool: 30000,
+      prizes: ["$10,000 - 1st Place", "$5,000 - 2nd Place", "$2,500 - 3rd Place"],
+      imageUrl: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500",
+      tags: ["Mobile", "iOS", "Android"],
+    },
+    {
+      title: "DevOps & Cloud Architecture",
+      description: "Design and deploy scalable cloud infrastructure. AWS/GCP/Azure.",
+      type: "devops",
+      difficulty: "hard",
+      daysOffset: { start: 20, end: 51 },
+      prizePool: 35000,
+      prizes: ["$12,000 - 1st Place", "$6,000 - 2nd Place", "$3,000 - 3rd Place"],
+      imageUrl: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500",
+      tags: ["DevOps", "Cloud", "Infrastructure"],
+    },
+    {
+      title: "AI Code Generation Showdown",
+      description: "Write code using AI assistants. Fastest and cleanest wins.",
+      type: "ai",
+      difficulty: "medium",
+      daysOffset: { start: -30, end: -5 },
+      prizePool: 40000,
+      prizes: ["$12,000 - Winner", "$6,000 - Runner-up", "$3,000 - 3rd Place"],
+      imageUrl: "https://images.unsplash.com/photo-1677442d019cecf3da12172d10e3066faf3d831f3?w=500",
+      tags: ["AI", "Code Generation", "Programming"],
+    },
+    {
+      title: "Open Source Contribution Rally",
+      description: "Contribute to major open source projects. Most PRs merged wins.",
+      type: "opensource",
+      difficulty: "medium",
+      daysOffset: { start: -60, end: -35 },
+      prizePool: 50000,
+      prizes: ["GitHub Sponsorship + $10,000", "$6,000", "$3,000"],
+      imageUrl: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500",
+      tags: ["Open Source", "Community", "Contribution"],
+    },
+  ];
+  
+  return baseCompetitions.map((comp, idx) => {
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() + comp.daysOffset.start);
+    
+    const endDate = new Date(now);
+    endDate.setDate(endDate.getDate() + comp.daysOffset.end);
+    
+    let status = "upcoming";
+    let participantCount = 0;
+    
+    if (now >= startDate && now <= endDate) {
+      status = "active";
+      participantCount = Math.floor(Math.random() * 3000) + 100;
+    } else if (now > endDate) {
+      status = "ended";
+      participantCount = Math.floor(Math.random() * 5000) + 1000;
+    }
+    
+    const leaderboard = status !== "upcoming" ? [
+      { rank: 1, username: `Winner${idx}`, score: Math.floor(Math.random() * 100) + 9000, submissions: Math.floor(Math.random() * 20) + 8 },
+      { rank: 2, username: `Runner${idx}`, score: Math.floor(Math.random() * 100) + 8900, submissions: Math.floor(Math.random() * 20) + 6 },
+      { rank: 3, username: `Third${idx}`, score: Math.floor(Math.random() * 100) + 8800, submissions: Math.floor(Math.random() * 20) + 5 },
+    ] : [];
+    
+    return {
+      id: `comp_${String(idx + 1).padStart(3, '0')}`,
+      ...comp,
+      status,
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0],
+      participantCount,
+      maxParticipants: 10000,
+      leaderboard,
+    };
+  });
+}
+
+export const massiveCompetitions = generateDynamicCompetitions();
+
+// Fallback static competitions (for reference)
+const staticCompetitions = [
   {
     id: "comp_001",
     title: "Global AI Challenge 2024",
