@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { sql } from "drizzle-orm";
 import { 
   arenas, challenges, quests, courses, userProfiles, 
   feedItems, roadmaps 
