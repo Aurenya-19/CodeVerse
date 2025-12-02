@@ -637,3 +637,86 @@ export const userStats = pgTable("user_stats", {
   lastUpdated: timestamp("last_updated").defaultNow(),
 });
 
+export type UserStats = typeof userStats.$inferSelect;
+
+// Comprehensive User Skills - Track individual skill progression
+export const userSkills = pgTable("user_skills", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  arenaId: varchar("arena_id").notNull().references(() => arenas.id),
+  skillName: varchar("skill_name").notNull(), // Python, React, Node.js, etc
+  level: integer("level").default(1), // 1-10 levels per skill
+  xp: integer("xp").default(0), // XP towards next level
+  xpToNextLevel: integer("xp_to_next_level").default(100),
+  proficiency: varchar("proficiency").default("novice"), // novice, intermediate, expert, master
+  certifications: text("certifications").array().default(sql`'{}'::text[]`),
+  practiceHours: integer("practice_hours").default(0),
+  projectsCompleted: integer("projects_completed").default(0),
+  mastery: integer("mastery").default(0), // 0-100% overall mastery
+  lastPracticed: timestamp("last_practiced"),
+  specializations: text("specializations").array().default(sql`'{}'::text[]`), // Focused expertise areas
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type UserSkill = typeof userSkills.$inferSelect;
+
+// Skill Progression Milestones
+export const skillProgressions = pgTable("skill_progressions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  skillId: varchar("skill_id").notNull().references(() => userSkills.id),
+  milestone: integer("milestone").notNull(), // Skill level achieved
+  title: varchar("title").notNull(), // "Reached Intermediate Python"
+  description: text("description"),
+  xpReward: integer("xp_reward").default(100),
+  badgeEarned: varchar("badge_earned"),
+  unlockedDate: timestamp("unlocked_date").defaultNow(),
+});
+
+export type SkillProgression = typeof skillProgressions.$inferSelect;
+
+// Skill Specializations - Deep expertise paths
+export const skillSpecializations = pgTable("skill_specializations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  skillId: varchar("skill_id").notNull().references(() => userSkills.id),
+  specialization: varchar("specialization").notNull(), // "Data Science", "Web Development", etc
+  masteryLevel: integer("mastery_level").default(1), // 1-5
+  techniques: text("techniques").array().default(sql`'{}'::text[]`), // Specific techniques learned
+  projects: text("projects").array().default(sql`'{}'::text[]`), // Projects using this specialization
+  xp: integer("xp").default(0),
+  focusScore: integer("focus_score").default(0), // How much user focuses on this
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type SkillSpecialization = typeof skillSpecializations.$inferSelect;
+
+// Skill Blending History - Track multi-skill combinations
+export const skillBlendingHistory = pgTable("skill_blending_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  skill1Id: varchar("skill1_id").notNull().references(() => userSkills.id),
+  skill2Id: varchar("skill2_id").notNull().references(() => userSkills.id),
+  xpBonus: integer("xp_bonus").default(0),
+  bonusMultiplier: integer("bonus_multiplier").default(1),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+export type SkillBlendingHistory = typeof skillBlendingHistory.$inferSelect;
+
+// Skill Recommendations - AI-generated personalized learning paths
+export const skillRecommendations = pgTable("skill_recommendations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  recommendedSkill: varchar("recommended_skill").notNull(),
+  reason: text("reason"), // "Complements your Python skills"
+  difficulty: varchar("difficulty").default("intermediate"),
+  estimatedHours: integer("estimated_hours").default(40),
+  relevanceScore: integer("relevance_score").default(0), // 0-100
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type SkillRecommendation = typeof skillRecommendations.$inferSelect;
+
