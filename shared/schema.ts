@@ -29,7 +29,9 @@ export const users = pgTable("users", {
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
+  penName: varchar("pen_name"), // Stylized/fake name for gaming
   profileImageUrl: varchar("profile_image_url"),
+  profileSetupCompleted: boolean("profile_setup_completed").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
