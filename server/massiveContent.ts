@@ -1,6 +1,8 @@
 import { enrichCourseWithContent } from './courseContent';
 
 // Massive content expansion - 200+ challenges, quests, and courses
+const challengeImages = ["https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500", "https://images.unsplash.com/photo-1633356122544-f134324ef6db?w=500", "https://images.unsplash.com/photo-1667482747897-7d0e5fce0d6d?w=500", "https://images.unsplash.com/photo-1639762681033-6461502e77bb?w=500", "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=500"];
+
 export const massiveChallenges = Array.from({ length: 200 }, (_, i) => ({
   id: `challenge_${i + 1}`,
   arenaId: ["ai", "web", "mobile", "cybersecurity", "blockchain", "devops", "gamedev", "iot", "physics", "math", "quantum", "fpga", "verification", "compilers", "hpc", "biotech", "ar-vr"][i % 17],
@@ -10,11 +12,14 @@ export const massiveChallenges = Array.from({ length: 200 }, (_, i) => ({
   points: Math.floor((i % 4 + 1) * 25),
   xpReward: Math.floor((i % 4 + 1) * 50),
   timeLimit: Math.floor(Math.random() * 180 + 30),
+  imageUrl: challengeImages[i % challengeImages.length],
   testCases: Array.from({ length: 5 }, (_, j) => ({ input: `input_${j}`, expected: `output_${j}` })),
   hints: ["Think about edge cases", "Start with a simple solution", "Optimize after correctness"],
-  resources: ["Documentation", "Tutorial", "Reference Material"],
+  resources: ["https://docs.example.com", "https://tutorial.example.com", "https://reference.example.com"],
   tags: ["practice", "real-world", "assessment"],
 }));
+
+const questImages = ["https://images.unsplash.com/photo-1550751827-4bd582f6de8c?w=500", "https://images.unsplash.com/photo-1635070041078-e5b94039d226?w=500", "https://images.unsplash.com/photo-1677442d019cecf3da12172d10e3066faf3d831f3?w=500"];
 
 export const massiveQuests = Array.from({ length: 100 }, (_, i) => ({
   id: `quest_${i + 1}`,
@@ -24,9 +29,12 @@ export const massiveQuests = Array.from({ length: 100 }, (_, i) => ({
   xpReward: [25, 50, 100, 200][i % 4],
   target: [5, 10, 20, 50][i % 4],
   category: ["practice", "learning", "community", "achievements"][i % 4],
+  imageUrl: questImages[i % questImages.length],
   badge: `quest_badge_${i % 10}`,
   tags: ["activity", "progress"],
 }));
+
+const courseImages = ["https://images.unsplash.com/photo-1639322537228-f710d846310e?w=500", "https://images.unsplash.com/photo-1550751827-4bd582f6de8c?w=500", "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500", "https://images.unsplash.com/photo-1633356122544-f134324ef6db?w=500"];
 
 export const massiveCourses = Array.from({ length: 85 }, (_, i) => ({
   id: `course_${i + 1}`,
@@ -35,6 +43,7 @@ export const massiveCourses = Array.from({ length: 85 }, (_, i) => ({
   difficulty: ["beginner", "intermediate", "advanced"][i % 3],
   duration: 120 + Math.floor(Math.random() * 480),
   category: ["ai", "web", "mobile", "security", "blockchain", "devops", "gamedev", "iot"][i % 8],
+  imageUrl: courseImages[i % courseImages.length],
   xpReward: 500 + (i % 3) * 250,
   enrollments: Math.floor(Math.random() * 10000 + 100),
   rating: Math.random() * 1 + 4,

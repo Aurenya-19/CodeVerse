@@ -1670,6 +1670,21 @@ export async function registerRoutes(
     res.json({ success: true, member });
   });
 
+  // Tech News Feed
+  app.get("/api/news", (req, res) => {
+    const news = [
+      { id: "1", title: "GPT-5 Expected to Rival Human Intelligence in 2025", description: "OpenAI rumors suggest next-generation model reaching AGI capability", category: "AI/ML", date: new Date().toISOString(), imageUrl: "https://images.unsplash.com/photo-1677442d019cecf3da12172d10e3066faf3d831f3?w=500", link: "https://example.com", source: "TechNews" },
+      { id: "2", title: "Quantum Computing Breakthrough by IBM", description: "New quantum processor achieves 1000+ qubit milestone", category: "Quantum", date: new Date(Date.now() - 86400000).toISOString(), imageUrl: "https://images.unsplash.com/photo-1635070041078-e5b94039d226?w=500", link: "https://example.com", source: "ScienceDaily" },
+      { id: "3", title: "Rust Adoption Surges in Web Development", description: "Major frameworks emerging with 40% faster performance", category: "Web Dev", date: new Date(Date.now() - 172800000).toISOString(), imageUrl: "https://images.unsplash.com/photo-1550751827-4bd582f6de8c?w=500", link: "https://example.com", source: "DevNews" },
+      { id: "4", title: "Blockchain Security Audit Reports Major Vulnerabilities", description: "Latest DeFi protocols show 85% improvement in smart contract safety", category: "Blockchain", date: new Date(Date.now() - 259200000).toISOString(), imageUrl: "https://images.unsplash.com/photo-1639322537228-f710d846310e?w=500", link: "https://example.com", source: "CryptoInsider" },
+      { id: "5", title: "Cybersecurity Alert: New Malware Targets Supply Chain", description: "Organizations urged to implement zero-trust security models", category: "Security", date: new Date(Date.now() - 345600000).toISOString(), imageUrl: "https://images.unsplash.com/photo-1633356122544-f134324ef6db?w=500", link: "https://example.com", source: "SecurityToday" },
+      { id: "6", title: "GitHub Copilot Achieves 90% Code Suggestion Accuracy", description: "AI-assisted coding now saves developers 3+ hours per day", category: "AI/ML", date: new Date(Date.now() - 432000000).toISOString(), imageUrl: "https://images.unsplash.com/photo-1667482747897-7d0e5fce0d6d?w=500", link: "https://example.com", source: "DevTools" },
+      { id: "7", title: "Docker Containers Now 50% More Efficient", description: "Latest version reduces memory footprint significantly", category: "DevOps", date: new Date(Date.now() - 518400000).toISOString(), imageUrl: "https://images.unsplash.com/photo-1639762681033-6461502e77bb?w=500", link: "https://example.com", source: "CloudOps" },
+      { id: "8", title: "AR/VR Market Reaches $50 Billion Milestone", description: "Enterprise adoption accelerates with killer applications emerging", category: "AR/VR", date: new Date(Date.now() - 604800000).toISOString(), imageUrl: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=500", link: "https://example.com", source: "TechTrends" },
+    ];
+    res.json(news);
+  });
+
   // Tech Facts Feature - Interesting facts to show users
   app.get("/api/tech-facts", (req, res) => {
     const techFacts = [
