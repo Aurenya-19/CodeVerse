@@ -1,78 +1,116 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Globe, Sparkles, Crown, Zap, Flame, Trophy, Users, Palette, Wand2, Heart } from "lucide-react";
+import { Sparkles, Star, Trophy, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 
-interface MetaverseUser {
-  user: { id: string; firstName: string; lastName: string; profileImageUrl: string };
-  profile: { xp: number; level: number; dailyStreak: number };
-  skinTone: string;
-  hairStyle: string;
-  outfit: string;
-  aura: string;
-}
-
-interface UserAvatar {
+interface Avatar {
   id: string;
-  userId: string;
-  skinTone: string;
-  hairStyle: string;
-  outfit: string;
-  aura: string;
+  penName: string;
+  level: number;
+  xp: number;
+  rank: number;
+  avatarColor: string;
 }
-
-const avatarCustomizations = {
-  skinTones: ["default", "light", "medium", "dark", "olive", "golden"],
-  hairStyles: ["default", "short", "long", "curly", "straight", "spiky"],
-  outfits: ["default", "casual", "formal", "gaming", "hacker", "scientist"],
-  auras: ["none", "blue", "red", "gold", "purple", "rainbow"],
-};
 
 export default function Metaverse() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [selectedTab, setSelectedTab] = useState("leaderboard");
-  const [customizing, setCustomizing] = useState(false);
-  const [avatarData, setAvatarData] = useState<UserAvatar | null>(null);
-
-  const { data: leaderboard, isLoading } = useQuery<MetaverseUser[]>({
-    queryKey: ["/api/metaverse/leaderboard"],
-  });
-
-  const { data: userAvatar, refetch: refetchAvatar } = useQuery<UserAvatar | null>({
-    queryKey: ["/api/avatar"],
-  });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [topPlayers] = useState<Avatar[]>([
+    { id: "1", penName: "SkyWalker", level: 45, xp: 125000, rank: 1, avatarColor: "#00FFFF" },
+    { id: "2", penName: "CodeNinja", level: 42, xp: 118000, rank: 2, avatarColor: "#FF00FF" },
+    { id: "3", penName: "ByteMaster", level: 40, xp: 112000, rank: 3, avatarColor: "#FFD700" },
+    { id: "4", penName: "TechGuru", level: 38, xp: 105000, rank: 4, avatarColor: "#00FF00" },
+    { id: "5", penName: "DevWizard", level: 35, xp: 98000, rank: 5, avatarColor: "#FF6B9D" },
+  ]);
 
   useEffect(() => {
-    if (userAvatar) {
-      setAvatarData(userAvatar as UserAvatar);
-    }
-  }, [userAvatar]);
+    const initBabylon = async () => {
+      if (!containerRef.current) return;
+      
+      try {
+        const BABYLON = (await import("babylonjs")).default;
+        
+        const canvas = document.createElement("canvas");
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+        canvas.style.borderRadius = "0.5rem";
+        containerRef.current.innerHTML = "";
+        containerRef.current.appendChild(canvas);
 
-  const handleCreateAvatar = async () => {
-    if (!avatarData) return;
-    try {
-      const response = await apiRequest("POST", "/api/avatar/create", avatarData);
-      if (response && typeof response === "object") {
-        setAvatarData(response as unknown as UserAvatar);
-        refetchAvatar();
-        toast({
-          title: "Avatar Created!",
-          description: "Your metaverse avatar is ready.",
+        const engine = new BABYLON.Engine(canvas, true);
+        const scene = new BABYLON.Scene(engine);
+        
+        scene.clearColor = new BABYLON.Color3(0.1, 0.1, 0.25);
+        
+        const light1 = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
+        light1.intensity = 0.7;
+        light1.groundColor = new BABYLON.Color3(0.5, 0.25, 0.7);
+        
+        const light2 = new BABYLON.PointLight("light2", new BABYLON.Vector3(10, 20, 10), scene);
+        light2.intensity = 0.8;
+        light2.range = 100;
+        
+        const sphere = BABYLON.MeshBuilder.CreateSphere("skybox", { diameter: 1000 }, scene);
+        const skyboxMat = new BABYLON.StandardMaterial("skybox", scene);
+        skyboxMat.emissiveColor = new BABYLON.Color3(0.1, 0.1, 0.2);
+        sphere.material = skyboxMat;
+
+        topPlayers.forEach((player, index) => {
+          const sphere = BABYLON.MeshBuilder.CreateSphere(`avatar${index}`, { diameter: 2, segments: 32 }, scene);
+          const angle = (index / topPlayers.length) * Math.PI * 2;
+          sphere.position = new BABYLON.Vector3(
+            Math.cos(angle) * 15,
+            index * 3 - 6,
+            Math.sin(angle) * 15
+          );
+
+          const mat = new BABYLON.StandardMaterial(`mat${index}`, scene);
+          mat.emissiveColor = BABYLON.Color3.FromHexString(player.avatarColor);
+          mat.specularColor = new BABYLON.Color3(0.5, 0.8, 1);
+          sphere.material = mat;
+
+          const glow = new BABYLON.GlowLayer("glow", scene);
+          glow.addIncludedOnlyMesh(sphere);
+          glow.intensity = 0.8;
         });
-        setCustomizing(false);
+
+        const camera = new BABYLON.UniversalCamera("camera1", new BABYLON.Vector3(0, 8, -30), scene);
+        camera.attachControl(canvas, true);
+        camera.speed = 0.1;
+        camera.angularSensibility = 1000;
+        camera.inertia = 0.8;
+        camera.panningInertia = 0.7;
+
+        engine.runRenderLoop(() => {
+          scene.render();
+        });
+
+        window.addEventListener("resize", () => {
+          engine.resize();
+        });
+      } catch (error) {
+        console.error("Babylon.js initialization error:", error);
+        if (containerRef.current) {
+          containerRef.current.innerHTML = `
+            <div style="padding: 2rem; text-align: center; color: var(--foreground);">
+              <p>3D Leaderboard visualization loading...</p>
+              <p style="font-size: 0.875rem; color: var(--muted-foreground); margin-top: 0.5rem;">
+                Creating galaxy-themed avatar spaces
+              </p>
+            </div>
+          `;
+        }
       }
-    } catch (error) {
-      toast({
+    };
+
+    initBabylon();
+  }, [topPlayers]);
         title: "Error",
         description: "Failed to create avatar",
         variant: "destructive",
