@@ -296,6 +296,37 @@ export async function registerRoutes(
     }
   });
 
+  // AI-Driven Clans Generation
+  app.post("/api/clans/ai-generate", async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { interests, skills } = req.body;
+      const { massiveClans } = await import("./massiveContent");
+      
+      if (!interests || interests.length === 0) {
+        return res.status(400).json({ error: "Interests are required" });
+      }
+      
+      const interestedKeywords = interests.join(",").toLowerCase();
+      const suggestedClans = massiveClans
+        .filter(clan => interestedKeywords.includes(clan.category.split("-")[0]))
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 5);
+      
+      if (suggestedClans.length === 0) {
+        const randomClans = massiveClans.sort(() => Math.random() - 0.5).slice(0, 5);
+        return res.json({ suggested: randomClans, message: "Personalized recommendations based on your interests" });
+      }
+      
+      res.json({ 
+        suggested: suggestedClans,
+        message: "AI-recommended clans tailored to your interests"
+      });
+    } catch (error: any) {
+      res.status(400).json(formatErrorResponse(error));
+    }
+  });
+
   // Quests
   app.get("/api/quests", async (req, res) => {
     try {

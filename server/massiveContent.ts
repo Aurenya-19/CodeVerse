@@ -508,146 +508,51 @@ const staticCompetitions = [
   },
 ];
 
-// Tech News Feed - Real tech news with images
-export const massiveFeedItems = [
-  {
-    id: "feed_1",
-    title: "OpenAI Releases GPT-4 Turbo with 128K Context Window",
-    description: "OpenAI announces GPT-4 Turbo with improved capabilities and 128K token context window for handling longer documents and code repositories.",
-    content: "GPT-4 Turbo represents a significant leap forward in AI capabilities with better reasoning, longer context, and improved performance across multiple domains.",
-    category: "ai",
-    source: "OpenAI Official",
-    sourceUrl: "https://openai.com",
-    imageUrl: "https://images.unsplash.com/photo-1677442d019cecf8dab4b3aed3b7cfcc?w=800&h=400&fit=crop",
-    tags: ["AI", "GPT-4", "LLM", "ML"],
-    likes: 2540,
-    views: 15620,
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-  },
-  {
-    id: "feed_2",
-    title: "React 19 Released with Major Performance Improvements",
-    description: "React 19 brings compiler optimizations, improved hydration, and better developer experience for building modern web applications.",
-    content: "The latest React version focuses on performance improvements, better error handling, and new features for server-side rendering.",
-    category: "web",
-    source: "React Blog",
-    sourceUrl: "https://react.dev",
-    imageUrl: "https://images.unsplash.com/photo-1633356122544-f134324ef6db?w=800&h=400&fit=crop",
-    tags: ["React", "JavaScript", "Frontend", "Web"],
-    likes: 1890,
-    views: 12450,
-    createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
-  },
-  {
-    id: "feed_3",
-    title: "Kubernetes 1.28 Stable Release Available Now",
-    description: "Kubernetes 1.28 introduces improved security features, better container runtime integration, and enhanced observability tools.",
-    content: "Latest Kubernetes release focuses on cloud-native best practices and improved operations for DevOps teams worldwide.",
-    category: "devops",
-    source: "Kubernetes.io",
-    sourceUrl: "https://kubernetes.io",
-    imageUrl: "https://images.unsplash.com/photo-1667482747897-7d0e5fce0d6d?w=800&h=400&fit=crop",
-    tags: ["Kubernetes", "DevOps", "Docker", "Cloud"],
-    likes: 1240,
-    views: 8920,
-    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000),
-  },
-  {
-    id: "feed_4",
-    title: "New Quantum Computing Breakthrough in Error Correction",
-    description: "Researchers achieve major milestone in quantum error correction using surface codes, bringing fault-tolerant quantum computers closer to reality.",
-    content: "Scientists demonstrate practical quantum error correction at scale, reducing errors exponentially and opening new possibilities for quantum computing.",
-    category: "quantum",
-    source: "Nature Quantum",
-    sourceUrl: "https://nature.com",
-    imageUrl: "https://images.unsplash.com/photo-1633356122544-f134324ef6db?w=800&h=400&fit=crop",
-    tags: ["Quantum", "Physics", "Computing", "Research"],
-    likes: 3120,
-    views: 18560,
-    createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000),
-  },
-  {
-    id: "feed_5",
-    title: "Cybersecurity Report: Zero-Trust Architecture Adoption Surges",
-    description: "2024 cybersecurity report shows 73% of enterprises now implement zero-trust models for enhanced security and compliance.",
-    content: "Organizations worldwide are shifting towards zero-trust security frameworks to protect against advanced threats and insider attacks.",
-    category: "cybersecurity",
-    source: "CyberSecurityMag",
-    sourceUrl: "https://cybersecurity.com",
-    imageUrl: "https://images.unsplash.com/photo-1550751827-4bd94c3e310e?w=800&h=400&fit=crop",
-    tags: ["Security", "Zero-Trust", "Enterprise", "Protection"],
-    likes: 2340,
-    views: 14320,
-    createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000),
-  },
-  {
-    id: "feed_6",
-    title: "Blockchain Scalability: Layer 2 Solutions Gain Traction",
-    description: "Layer 2 solutions like Arbitrum and Optimism process over $2B in daily transactions, revolutionizing blockchain scalability.",
-    content: "Ethereum Layer 2 solutions demonstrate massive scalability improvements while maintaining security, reducing transaction costs by 95%.",
-    category: "blockchain",
-    source: "CoinTelegraph",
-    sourceUrl: "https://cointelegraph.com",
-    imageUrl: "https://images.unsplash.com/photo-1639762681033-6461502e77bb?w=800&h=400&fit=crop",
-    tags: ["Blockchain", "Ethereum", "DeFi", "Crypto"],
-    likes: 1650,
-    views: 10240,
-    createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000),
-  },
-  {
-    id: "feed_7",
-    title: "Generative AI Tools Revolutionize Game Development",
-    description: "Game studios leverage AI for asset generation, level design, and NPC behavior, reducing development time by 40%.",
-    content: "Generative AI tools are transforming game development workflows, enabling smaller teams to create AAA-quality experiences.",
-    category: "gamedev",
-    source: "GDC Magazine",
-    sourceUrl: "https://gdcvault.com",
-    imageUrl: "https://images.unsplash.com/photo-1538481143235-5d630029b5d1?w=800&h=400&fit=crop",
-    tags: ["GameDev", "AI", "Generative", "Development"],
-    likes: 1920,
-    views: 11680,
-    createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000),
-  },
-  {
-    id: "feed_8",
-    title: "IoT Security Standards: New Framework Released",
-    description: "NIST releases comprehensive IoT security framework addressing device authentication, encryption, and vulnerability management.",
-    content: "New standardized security framework provides guidelines for securing billions of IoT devices deployed globally.",
-    category: "iot",
-    source: "NIST.gov",
-    sourceUrl: "https://nist.gov",
-    imageUrl: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&h=400&fit=crop",
-    tags: ["IoT", "Security", "Standards", "Framework"],
-    likes: 890,
-    views: 5420,
-    createdAt: new Date(Date.now() - 14 * 60 * 60 * 1000),
-  },
-  {
-    id: "feed_9",
-    title: "Machine Learning Operations (MLOps) Best Practices",
-    description: "Guide to implementing effective MLOps pipelines for production machine learning systems with improved reliability and scalability.",
-    content: "MLOps practices streamline model deployment, monitoring, and maintenance, reducing time from development to production from months to weeks.",
-    category: "ai",
-    source: "TechCrunch",
-    sourceUrl: "https://techcrunch.com",
-    imageUrl: "https://images.unsplash.com/photo-1516321318423-f06f70d504f0?w=800&h=400&fit=crop",
-    tags: ["MLOps", "AI", "DevOps", "Production"],
-    likes: 1340,
-    views: 8760,
-    createdAt: new Date(Date.now() - 16 * 60 * 60 * 1000),
-  },
-  {
-    id: "feed_10",
-    title: "Web3 Integration: Enterprise Adoption Increases",
-    description: "Major enterprises now integrate blockchain technology for supply chain transparency, cross-border payments, and smart contracts.",
-    content: "Web3 solutions provide enterprises with immutable records, transparent auditing, and automated compliance through smart contracts.",
-    category: "web",
-    source: "Forbes",
-    sourceUrl: "https://forbes.com",
-    imageUrl: "https://images.unsplash.com/photo-1639762681033-6461502e77bb?w=800&h=400&fit=crop",
-    tags: ["Web3", "Blockchain", "Enterprise", "Integration"],
-    likes: 1560,
-    views: 9340,
-    createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000),
-  },
-];
+// Tech News Feed - 500+ unlimited news items
+export const massiveFeedItems = Array.from({ length: 500 }, (_, i) => {
+  const categories = ["ai", "web", "devops", "blockchain", "iot", "cybersecurity", "gamedev", "mobile", "quantum", "biotech"];
+  const sources = ["OpenAI", "React Blog", "TechCrunch", "GitHub", "Hacker News", "Dev.to", "Medium", "DZone", "InfoQ", "Ars Technica"];
+  const titles = ["Breakthrough in AI Model Optimization", "Cloud Infrastructure Scaling Record", "Security Vulnerability Patched", "Open Source Milestone", "Developer Tools Update", "Performance Improvements", "New Framework Adoption", "Industry Best Practices", "Conference Insights", "Research Published", "Product Launch", "Community Initiative", "Educational Resource", "Bug Fix Release", "Integration Announcement"];
+  const imageUrls = ["https://images.unsplash.com/photo-1677442d019cecf3da12172d10e3066faf3d831f3?w=800&h=400&fit=crop", "https://images.unsplash.com/photo-1633356122544-f134324ef6db?w=800&h=400&fit=crop", "https://images.unsplash.com/photo-1667482747897-7d0e5fce0d6d?w=800&h=400&fit=crop", "https://images.unsplash.com/photo-1639762681033-6461502e77bb?w=800&h=400&fit=crop", "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&h=400&fit=crop", "https://images.unsplash.com/photo-1550751827-4bd582f6de8c?w=800&h=400&fit=crop", "https://images.unsplash.com/photo-1538481143235-5d630029b5d1?w=800&h=400&fit=crop", "https://images.unsplash.com/photo-1512941691920-25bde6cbf335?w=800&h=400&fit=crop"];
+  const category = categories[i % categories.length];
+  const title = titles[i % titles.length];
+  const source = sources[i % sources.length];
+  const hours = Math.floor(Math.random() * 72);
+  return {
+    id: `feed_${i + 1}`,
+    title: `${title} #${i + 1}`,
+    description: `Breaking tech news: Latest ${category} updates and insights from the developer community`,
+    content: `In this article, we explore the latest ${category} advancements. Industry experts share insights. Read on for exclusive analysis and commentary.`,
+    category,
+    source,
+    sourceUrl: `https://${source.toLowerCase().replace(/\s/g, '')}.com`,
+    imageUrl: imageUrls[i % imageUrls.length],
+    tags: [category, "news", "trending", "tech"],
+    likes: Math.floor(Math.random() * 3000 + 100),
+    views: Math.floor(Math.random() * 20000 + 1000),
+    createdAt: new Date(Date.now() - hours * 60 * 60 * 1000),
+  };
+});
+
+// Massive AI-Driven Clans - 100+ community groups
+export const massiveClans = Array.from({ length: 100 }, (_, i) => {
+  const skills = ["AI/ML", "Web Dev", "Mobile", "Security", "DevOps", "Blockchain", "GameDev", "IoT", "Quantum", "Biotech"];
+  const clanTypes = ["Research", "Builders", "Innovators", "Masters", "Warriors", "Explorers", "Visionaries", "Pioneers"];
+  const skill = skills[i % skills.length];
+  const type = clanTypes[i % clanTypes.length];
+  return {
+    id: `clan_${i + 1}`,
+    name: `${skill} ${type} - Clan ${i + 1}`,
+    description: `Join our community of ${skill} enthusiasts working together to master cutting-edge technologies. Share knowledge, collaborate on projects, and level up together.`,
+    icon: ["Brain", "Code", "Smartphone", "Shield", "Cloud", "Link", "Gamepad2", "Wifi"][i % 8],
+    memberCount: Math.floor(Math.random() * 500 + 10),
+    xpBonus: Math.floor(Math.random() * 50 + 10),
+    badgeReward: `clan_badge_${i % 20}`,
+    category: skill.toLowerCase().replace(/\s/g, "-"),
+    banner: ["https://images.unsplash.com/photo-1677442d019cecf3da12172d10e3066faf3d831f3?w=800&h=200&fit=crop", "https://images.unsplash.com/photo-1639762681033-6461502e77bb?w=800&h=200&fit=crop"][i % 2],
+    perks: [`+${Math.floor(Math.random() * 30 + 10)}% XP on challenges`, "Access to exclusive resources", "Weekly knowledge sharing", "Mentorship from experienced members"],
+    joinRequirement: i % 3 === 0 ? "Any level welcome" : `Level ${Math.floor(i / 10) + 1}+`,
+    isActive: true,
+    createdAt: new Date(Date.now() - Math.floor(Math.random() * 90) * 24 * 60 * 60 * 1000),
+  };
+});
