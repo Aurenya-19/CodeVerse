@@ -1,3 +1,5 @@
+import { enrichCourseWithContent } from './courseContent';
+
 // Massive content expansion - 200+ challenges, quests, and courses
 export const massiveChallenges = Array.from({ length: 200 }, (_, i) => ({
   id: `challenge_${i + 1}`,
