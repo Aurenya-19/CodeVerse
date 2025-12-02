@@ -1927,68 +1927,100 @@ export async function registerRoutes(
   app.post("/api/ai/mentorship/ask", async (req, res) => {
     if (!req.user) return res.status(401).json({ error: "Not authenticated" });
     try {
-      const { question, context, arenaId } = req.body;
-      if (!process.env.OPENAI_API_KEY) {
+      const { question, context } = req.body;
+      
+      if (!question) {
+        return res.status(400).json({ error: "Question is required" });
+      }
+
+      try {
+        const { OpenAI } = await import("openai");
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        
+        const response = await openai.chat.completions.create({
+          model: "gpt-3.5-turbo",
+          messages: [
+            { role: "system", content: "You are an expert tech mentor helping developers learn. Provide clear, actionable, step-by-step advice. Be concise but thorough." },
+            { role: "user", content: `Context: ${context || 'General tech question'}.\n\nQuestion: ${question}` }
+          ],
+          max_tokens: 1000,
+          temperature: 0.7,
+        });
+        
+        const answer = response.choices[0]?.message?.content;
+        
+        if (!answer) {
+          return res.json({ 
+            answer: "I'm thinking about your question. Could you rephrase it?",
+            source: "fallback"
+          });
+        }
+
+        return res.json({
+          answer,
+          source: "ai_mentor",
+          timestamp: new Date().toISOString()
+        });
+      } catch (apiError: any) {
+        console.error("OpenAI API Error:", apiError.message);
         return res.json({ 
-          answer: "AI mentor learning mode active. Share your question and I'll help!",
-          source: "mentor"
+          answer: `Your question: "${question}"\n\nTip: Break down complex problems into smaller, manageable parts. Start with understanding the fundamentals, then apply them to your specific use case.`,
+          source: "fallback"
         });
       }
-      
-      const { OpenAI } = await import("openai");
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-      const response = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages: [
-          { role: "system", content: "You are an expert tech mentor helping developers learn. Provide clear, actionable, step-by-step advice." },
-          { role: "user", content: `Context: ${context || 'General tech question'}. Question: ${question}` }
-        ],
-        max_tokens: 500,
-      });
-      
-      res.json({
-        answer: response.choices[0].message.content,
-        source: "ai_mentor",
-        timestamp: new Date()
-      });
     } catch (error: any) {
-      res.json({ answer: "Mentor temporarily thinking... Check back soon!", source: "fallback" });
+      console.error("Mentorship error:", error);
+      res.status(500).json({ error: "Failed to process your question" });
     }
   });
 
   app.post("/api/ai/mentorship/feedback", async (req, res) => {
     if (!req.user) return res.status(401).json({ error: "Not authenticated" });
     try {
-      const { code, language, challengeId } = req.body;
-      if (!process.env.OPENAI_API_KEY) {
+      const { code, language } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ error: "Code is required" });
+      }
+
+      try {
+        const { OpenAI } = await import("openai");
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        
+        const analysis = await openai.chat.completions.create({
+          model: "gpt-3.5-turbo",
+          messages: [
+            { role: "system", content: "You are an expert code reviewer. Analyze the code and provide: 1) What's working well 2) Areas for improvement 3) Specific code changes. Be constructive and educational." },
+            { role: "user", content: `Please review this ${language || 'JavaScript'} code:\n\n${code}` }
+          ],
+          max_tokens: 1500,
+          temperature: 0.7,
+        });
+        
+        const feedback = analysis.choices[0]?.message?.content;
+        
+        if (!feedback) {
+          return res.json({ 
+            feedback: "Code received. Keep practicing and iterating on your solutions!",
+            isAI: false
+          });
+        }
+
+        return res.json({
+          feedback,
+          isAI: true,
+          timestamp: new Date().toISOString()
+        });
+      } catch (apiError: any) {
+        console.error("OpenAI API Error:", apiError.message);
         return res.json({ 
-          feedback: "Your code looks solid! Keep coding and iterating.",
-          suggestions: ["Test edge cases", "Add comments", "Refactor for readability"],
+          feedback: `Code Review:\n\nGood structure overall! Here are suggestions:\n• Add more descriptive comments\n• Consider edge cases\n• Test with various inputs\n• Follow consistent naming conventions\n\nKeep coding and iterating!`,
           isAI: false
         });
       }
-      
-      const { OpenAI } = await import("openai");
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-      const analysis = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages: [
-          { role: "system", content: "Code reviewer: Analyze code. Provide: 1) What's good 2) What to improve 3) Specific fixes" },
-          { role: "user", content: `Review this ${language} code:\n${code}` }
-        ],
-        max_tokens: 800,
-      });
-      
-      res.json({
-        feedback: analysis.choices[0].message.content,
-        isAI: true,
-        timestamp: new Date()
-      });
     } catch (error: any) {
-      res.json({ 
-        feedback: "Great attempt! Keep practicing - each submission makes you stronger.",
-        isAI: false
-      });
+      console.error("Code feedback error:", error);
+      res.status(500).json({ error: "Failed to review your code" });
     }
   });
 
