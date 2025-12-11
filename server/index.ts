@@ -41,7 +41,7 @@ const RATE_LIMIT_WINDOW = 60000; // 1 minute
 const RATE_LIMIT_MAX = 100; // Max 100 requests per minute per IP
 
 // Paths exempt from rate limiting (core app features)
-const RATE_LIMIT_EXEMPT = ['/api/dashboard', '/api/auth/', '/api/profile', '/api/arenas', '/api/challenges', '/api/courses', '/api/quests', '/api/leaderboards', '/api/onboarding', '/api/complete-onboarding'];
+const RATE_LIMIT_EXEMPT = ['/api/dashboard', '/api/auth/', '/api/profile', '/api/arenas', '/api/challenges', '/api/courses', '/api/quests', '/api/leaderboards', '/api/onboarding', '/api/complete-onboarding', '/api/login', '/api/callback', '/health'];
 
 // Memory cleanup: Remove expired rate limit entries every 5 minutes
 setInterval(() => {
@@ -149,26 +149,89 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 (async () => {
-  const { seedDatabase } = await import("./seed");
+  log("Starting CodeVerse server...", "startup");
+  
+  // Database seeding with error handling
   try {
+    const { seedDatabase } = await import("./seed");
+    log("Attempting database seed...", "startup");
     await seedDatabase();
-  } catch (err) {
-    console.log("Seed skipped or error:", err);
+    log("Database seeded successfully", "startup");
+  } catch (err: any) {
+    console.error("[Startup] Database seed error:", err.message);
+    
+    if (err.message?.includes("endpoint") && err.message?.includes("disabled")) {
+      console.error("========================================");
+      console.error("CRITICAL: NEON DATABASE ENDPOINT DISABLED");
+      console.error("========================================");
+      console.error("Your Neon database endpoint is disabled.");
+      console.error("To fix this:");
+      console.error("1. Go to https://console.neon.tech");
+      console.error("2. Select your project");
+      console.error("3. Enable the compute endpoint");
+      console.error("4. Restart this application");
+      console.error("========================================");
+      console.error("Server will continue but database operations will fail!");
+      console.error("========================================");
+    } else {
+      console.error("[Startup] Seed skipped or error:", err.message);
+    }
   }
 
-  const { setupAuth } = await import("./googleAuth");
-  await setupAuth(app);
+  // Setup authentication with error handling
+  try {
+    const { setupAuth } = await import("./googleAuth");
+    log("Setting up Google OAuth...", "startup");
+    await setupAuth(app);
+    log("Google OAuth configured successfully", "startup");
+  } catch (err: any) {
+    console.error("[Startup] Auth setup error:", err.message);
+    console.error("[Startup] Authentication may not work properly!");
+    
+    if (err.message?.includes("credentials")) {
+      console.error("Please ensure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are set in environment variables");
+    }
+  }
   
   // Register onboarding routes
-  const { registerOnboardingRoutes } = await import("./onboardingRoutes");
-  registerOnboardingRoutes(app);
+  try {
+    const { registerOnboardingRoutes } = await import("./onboardingRoutes");
+    registerOnboardingRoutes(app);
+    log("Onboarding routes registered", "startup");
+  } catch (err: any) {
+    console.error("[Startup] Onboarding routes error:", err.message);
+  }
   
-  await registerRoutes(httpServer, app);
+  // Register main routes
+  try {
+    await registerRoutes(httpServer, app);
+    log("Main routes registered", "startup");
+  } catch (err: any) {
+    console.error("[Startup] Routes registration error:", err.message);
+  }
 
   // Health check endpoint for monitoring and load balancers
-  app.get("/health", (_req, res) => {
+  app.get("/health", async (_req, res) => {
     res.set("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.json({ status: "healthy", timestamp: new Date().toISOString() });
+    
+    // Check database connectivity
+    let dbStatus = "unknown";
+    try {
+      const { pool } = await import("./db");
+      const client = await pool.connect();
+      client.release();
+      dbStatus = "healthy";
+    } catch (err: any) {
+      dbStatus = "unhealthy";
+      console.error("[Health] Database check failed:", err.message);
+    }
+    
+    res.json({ 
+      status: dbStatus === "healthy" ? "healthy" : "degraded",
+      database: dbStatus,
+      timestamp: new Date().toISOString(),
+      message: dbStatus === "unhealthy" ? "Database unavailable - some features may not work" : "All systems operational"
+    });
   });
 
   // Request validation middleware - catch bad requests early
@@ -205,8 +268,13 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
   } else {
-    const { setupVite } = await import("./vite");
-    await setupVite(httpServer, app);
+    try {
+      const { setupVite } = await import("./vite");
+      await setupVite(httpServer, app);
+      log("Vite dev server configured", "startup");
+    } catch (err: any) {
+      console.error("[Startup] Vite setup error:", err.message);
+    }
   }
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
@@ -221,7 +289,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       reusePort: true,
     },
     () => {
-      log(`serving on port ${port}`);
+      log(`========================================`, "startup");
+      log(`CodeVerse server running on port ${port}`, "startup");
+      log(`Environment: ${process.env.NODE_ENV || 'development'}`, "startup");
+      log(`========================================`, "startup");
     },
   );
 })();
