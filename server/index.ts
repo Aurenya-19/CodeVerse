@@ -41,7 +41,7 @@ const RATE_LIMIT_WINDOW = 60000; // 1 minute
 const RATE_LIMIT_MAX = 100; // Max 100 requests per minute per IP
 
 // Paths exempt from rate limiting (core app features)
-const RATE_LIMIT_EXEMPT = ['/api/dashboard', '/api/auth/', '/api/profile', '/api/arenas', '/api/challenges', '/api/courses', '/api/quests', '/api/leaderboards'];
+const RATE_LIMIT_EXEMPT = ['/api/dashboard', '/api/auth/', '/api/profile', '/api/arenas', '/api/challenges', '/api/courses', '/api/quests', '/api/leaderboards', '/api/onboarding', '/api/complete-onboarding'];
 
 // Memory cleanup: Remove expired rate limit entries every 5 minutes
 setInterval(() => {
@@ -158,6 +158,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
   const { setupAuth } = await import("./googleAuth");
   await setupAuth(app);
+  
+  // Register onboarding routes
+  const { registerOnboardingRoutes } = await import("./onboardingRoutes");
+  registerOnboardingRoutes(app);
+  
   await registerRoutes(httpServer, app);
 
   // Health check endpoint for monitoring and load balancers
