@@ -1,6 +1,6 @@
 import { Switch, Route, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -8,6 +8,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { OnboardingModal } from "@/components/OnboardingModal";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { I18nextProvider } from "react-i18next";
@@ -247,6 +248,32 @@ function Router() {
   );
 }
 
+function OnboardingCheck() {
+  const { user } = useAuth();
+  
+  const { data: onboardingStatus } = useQuery({
+    queryKey: ["onboarding-status"],
+    queryFn: async () => {
+      const res = await fetch("/api/onboarding-status");
+      if (!res.ok) throw new Error("Failed to fetch onboarding status");
+      return res.json();
+    },
+    enabled: !!user,
+    retry: 1,
+  });
+
+  if (user && onboardingStatus?.needsOnboarding) {
+    return (
+      <OnboardingModal 
+        open={true} 
+        userId={onboardingStatus.user.id} 
+      />
+    );
+  }
+
+  return null;
+}
+
 function App() {
   return (
     <I18nextProvider i18n={i18n}>
@@ -254,6 +281,7 @@ function App() {
         <ThemeProvider defaultTheme="dark">
           <TooltipProvider>
             <Toaster />
+            <OnboardingCheck />
             <Router />
           </TooltipProvider>
         </ThemeProvider>
