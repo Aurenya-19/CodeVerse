@@ -4,6 +4,7 @@ import ws from "ws";
 import * as schema from "@shared/schema";
 
 neonConfig.webSocketConstructor = ws;
+neonConfig.fetchConnectionCache = true;
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -11,86 +12,90 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Enhanced connection pool with better error handling for 20k+ users
+// Aggressive connection pool for auto-recovery
 const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
   max: 100,
-  min: 10,
-  idleTimeoutMillis: 60000,
-  connectionTimeoutMillis: 10000, // Increased timeout
+  min: 5,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 15000,
   statement_timeout: 30000,
   query_timeout: 30000,
+  // Force connection on startup
+  allowExitOnIdle: false,
 });
 
-// Connection pool monitoring with auto-recovery
-pool.on("error", (err) => {
-  console.error("[DB] Unexpected error on idle client:", err.message);
+let isConnected = false;
+let retryCount = 0;
+const MAX_AUTO_RETRIES = 10;
+
+// Aggressive auto-recovery
+pool.on("error", async (err) => {
+  console.error("[DB] Connection error:", err.message);
+  isConnected = false;
   
-  // Check if it's a disabled endpoint error
-  if (err.message?.includes("endpoint") && err.message?.includes("disabled")) {
-    console.error("[DB] CRITICAL: Neon database endpoint is disabled!");
-    console.error("[DB] Please enable it via Neon dashboard or API");
+  if (retryCount < MAX_AUTO_RETRIES) {
+    retryCount++;
+    console.log(`[DB] Auto-retry ${retryCount}/${MAX_AUTO_RETRIES} in 3s...`);
+    setTimeout(() => testConnection(), 3000);
   }
 });
 
 pool.on("connect", () => {
-  console.log("[DB] Database connection established");
+  console.log("[DB] ✓ Connected successfully");
+  isConnected = true;
+  retryCount = 0;
 });
 
-pool.on("remove", () => {
-  console.log("[DB] Database connection removed from pool");
-});
-
-// Test connection on startup with retry logic
-let connectionAttempts = 0;
-const MAX_RETRIES = 5;
-const RETRY_DELAY = 2000;
-
-async function testConnection() {
+// Force connection test with auto-retry
+async function testConnection(): Promise<boolean> {
   try {
     const client = await pool.connect();
-    console.log("[DB] ✓ Database connection successful");
+    await client.query('SELECT 1');
     client.release();
+    isConnected = true;
+    console.log("[DB] ✓ Database ready");
     return true;
   } catch (err: any) {
-    connectionAttempts++;
-    console.error(`[DB] Connection attempt ${connectionAttempts}/${MAX_RETRIES} failed:`, err.message);
+    isConnected = false;
+    console.error(`[DB] Connection failed:`, err.message);
     
-    if (err.message?.includes("endpoint") && err.message?.includes("disabled")) {
-      console.error("[DB] ========================================");
-      console.error("[DB] NEON DATABASE ENDPOINT IS DISABLED");
-      console.error("[DB] ========================================");
-      console.error("[DB] To fix this:");
-      console.error("[DB] 1. Go to your Neon dashboard");
-      console.error("[DB] 2. Enable the endpoint for your database");
-      console.error("[DB] 3. Or use Neon API to enable it programmatically");
-      console.error("[DB] ========================================");
-    }
-    
-    if (connectionAttempts < MAX_RETRIES) {
-      console.log(`[DB] Retrying in ${RETRY_DELAY/1000}s...`);
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+    if (retryCount < MAX_AUTO_RETRIES) {
+      retryCount++;
+      console.log(`[DB] Auto-retry ${retryCount}/${MAX_AUTO_RETRIES} in 2s...`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
       return testConnection();
     }
     
-    console.error("[DB] ✗ Failed to connect after", MAX_RETRIES, "attempts");
-    console.error("[DB] Server will continue but database operations will fail");
+    console.error("[DB] ✗ Max retries reached. Database may be unavailable.");
     return false;
   }
 }
 
-// Test connection asynchronously (don't block server startup)
-testConnection().catch(err => {
-  console.error("[DB] Connection test error:", err);
+// Start connection immediately
+testConnection().then(success => {
+  if (success) {
+    console.log("[DB] Database initialized successfully");
+  } else {
+    console.error("[DB] Database initialization failed - will retry on first query");
+  }
 });
+
+// Keep connection alive
+setInterval(async () => {
+  if (!isConnected) {
+    console.log("[DB] Connection lost, attempting recovery...");
+    await testConnection();
+  }
+}, 30000); // Check every 30s
 
 export { pool };
 export const db = drizzle({ client: pool, schema });
 
-// Helper function to execute queries with retry logic
+// Auto-retry wrapper
 export async function executeWithRetry<T>(
   operation: () => Promise<T>,
-  maxRetries: number = 3
+  maxRetries: number = 5
 ): Promise<T> {
   let lastError: any;
   
@@ -101,14 +106,14 @@ export async function executeWithRetry<T>(
       lastError = err;
       console.error(`[DB] Query attempt ${attempt}/${maxRetries} failed:`, err.message);
       
-      // Don't retry on certain errors
-      if (err.message?.includes("endpoint") && err.message?.includes("disabled")) {
-        throw new Error("Database endpoint is disabled. Please enable it in Neon dashboard.");
-      }
-      
       if (attempt < maxRetries) {
         const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
         await new Promise(resolve => setTimeout(resolve, delay));
+        
+        // Try to reconnect
+        if (!isConnected) {
+          await testConnection();
+        }
       }
     }
   }
