@@ -12,91 +12,90 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Aggressive connection pool for auto-recovery
+// Create pool but don't fail if connection fails
 const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  max: 100,
-  min: 5,
+  max: 20,
+  min: 0, // Allow zero connections
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 15000,
-  statement_timeout: 30000,
-  query_timeout: 30000,
-  // Force connection on startup
-  allowExitOnIdle: false,
+  connectionTimeoutMillis: 5000,
+  statement_timeout: 10000,
+  query_timeout: 10000,
+  allowExitOnIdle: true,
 });
 
 let isConnected = false;
-let retryCount = 0;
-const MAX_AUTO_RETRIES = 10;
+let dbAvailable = false;
 
-// Aggressive auto-recovery
-pool.on("error", async (err) => {
-  console.error("[DB] Connection error:", err.message);
+// Don't fail on errors - just log
+pool.on("error", (err) => {
+  console.error("[DB] Error (non-fatal):", err.message);
   isConnected = false;
-  
-  if (retryCount < MAX_AUTO_RETRIES) {
-    retryCount++;
-    console.log(`[DB] Auto-retry ${retryCount}/${MAX_AUTO_RETRIES} in 3s...`);
-    setTimeout(() => testConnection(), 3000);
-  }
+  dbAvailable = false;
 });
 
 pool.on("connect", () => {
-  console.log("[DB] ✓ Connected successfully");
+  console.log("[DB] ✓ Connected");
   isConnected = true;
-  retryCount = 0;
+  dbAvailable = true;
 });
 
-// Force connection test with auto-retry
+// Try to connect but don't block startup
 async function testConnection(): Promise<boolean> {
   try {
     const client = await pool.connect();
     await client.query('SELECT 1');
     client.release();
     isConnected = true;
-    console.log("[DB] ✓ Database ready");
+    dbAvailable = true;
+    console.log("[DB] ✓ Database available");
     return true;
   } catch (err: any) {
     isConnected = false;
-    console.error(`[DB] Connection failed:`, err.message);
+    dbAvailable = false;
     
-    if (retryCount < MAX_AUTO_RETRIES) {
-      retryCount++;
-      console.log(`[DB] Auto-retry ${retryCount}/${MAX_AUTO_RETRIES} in 2s...`);
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      return testConnection();
+    if (err.message?.includes("endpoint") && err.message?.includes("disabled")) {
+      console.error("[DB] ⚠️  Neon endpoint DISABLED - running in memory-only mode");
+      console.error("[DB] ⚠️  To fix: Enable endpoint at https://console.neon.tech");
+    } else {
+      console.error("[DB] ⚠️  Connection failed:", err.message);
     }
     
-    console.error("[DB] ✗ Max retries reached. Database may be unavailable.");
+    console.log("[DB] ℹ️  App will run with memory-only sessions");
     return false;
   }
 }
 
-// Start connection immediately
-testConnection().then(success => {
-  if (success) {
-    console.log("[DB] Database initialized successfully");
-  } else {
-    console.error("[DB] Database initialization failed - will retry on first query");
-  }
+// Test connection but don't wait for it
+testConnection().catch(() => {
+  console.log("[DB] Starting in memory-only mode");
 });
 
-// Keep connection alive
-setInterval(async () => {
+// Try to reconnect periodically
+setInterval(() => {
   if (!isConnected) {
-    console.log("[DB] Connection lost, attempting recovery...");
-    await testConnection();
+    testConnection().catch(() => {});
   }
-}, 30000); // Check every 30s
+}, 60000); // Every 60 seconds
 
 export { pool };
 export const db = drizzle({ client: pool, schema });
 
-// Auto-retry wrapper
+// Check if database is available
+export function isDatabaseAvailable(): boolean {
+  return dbAvailable;
+}
+
+// Safe query wrapper - returns null if DB unavailable
 export async function executeWithRetry<T>(
   operation: () => Promise<T>,
-  maxRetries: number = 5
-): Promise<T> {
+  maxRetries: number = 3
+): Promise<T | null> {
+  if (!dbAvailable) {
+    console.log("[DB] Skipping query - database unavailable");
+    return null;
+  }
+  
   let lastError: any;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -104,19 +103,21 @@ export async function executeWithRetry<T>(
       return await operation();
     } catch (err: any) {
       lastError = err;
-      console.error(`[DB] Query attempt ${attempt}/${maxRetries} failed:`, err.message);
+      
+      if (err.message?.includes("endpoint") && err.message?.includes("disabled")) {
+        console.error("[DB] Endpoint disabled - switching to memory mode");
+        dbAvailable = false;
+        return null;
+      }
       
       if (attempt < maxRetries) {
-        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+        const delay = Math.min(500 * attempt, 2000);
         await new Promise(resolve => setTimeout(resolve, delay));
-        
-        // Try to reconnect
-        if (!isConnected) {
-          await testConnection();
-        }
       }
     }
   }
   
-  throw lastError;
+  console.error("[DB] Query failed after retries:", lastError.message);
+  dbAvailable = false;
+  return null;
 }
