@@ -1,123 +1,97 @@
-import { Pool, neonConfig } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-serverless";
-import ws from "ws";
-import * as schema from "@shared/schema";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import * as schema from "../shared/schema";
 
-neonConfig.webSocketConstructor = ws;
-neonConfig.fetchConnectionCache = true;
+// Supabase connection configuration with optimizations
+const connectionString = process.env.DATABASE_URL!;
 
-if (!process.env.DATABASE_URL) {
+if (!connectionString) {
   throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?"
+    "DATABASE_URL environment variable is not set. Please add your Supabase connection string."
   );
 }
 
-// Create pool but don't fail if connection fails
-const pool = new Pool({ 
-  connectionString: process.env.DATABASE_URL,
-  max: 20,
-  min: 0, // Allow zero connections
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
-  statement_timeout: 10000,
-  query_timeout: 10000,
-  allowExitOnIdle: true,
-});
+// Connection pool configuration optimized for high load
+const poolConfig = {
+  max: 20, // Maximum pool size (Supabase free tier supports up to 20 connections)
+  idle_timeout: 20, // Close idle connections after 20 seconds
+  connect_timeout: 10, // Connection timeout in seconds
+  max_lifetime: 60 * 30, // Maximum connection lifetime (30 minutes)
+  prepare: false, // Disable prepared statements for better compatibility
+};
 
-let isConnected = false;
-let dbAvailable = false;
+// Create connection with retry logic
+let sql: ReturnType<typeof postgres>;
+let db: ReturnType<typeof drizzle>;
 
-// Don't fail on errors - just log
-pool.on("error", (err) => {
-  console.error("[DB] Error (non-fatal):", err.message);
-  isConnected = false;
-  dbAvailable = false;
-});
+try {
+  console.log("[DB] Initializing Supabase connection pool...");
+  
+  // Create postgres connection with pooling
+  sql = postgres(connectionString, {
+    ...poolConfig,
+    onnotice: () => {}, // Suppress notices
+    debug: process.env.NODE_ENV === "development",
+  });
 
-pool.on("connect", () => {
-  console.log("[DB] ✓ Connected");
-  isConnected = true;
-  dbAvailable = true;
-});
+  // Initialize Drizzle ORM
+  db = drizzle(sql, { schema });
 
-// Try to connect but don't block startup
-async function testConnection(): Promise<boolean> {
+  console.log("[DB] ✅ Supabase connection pool initialized successfully");
+  console.log(`[DB] Pool config: max=${poolConfig.max}, idle_timeout=${poolConfig.idle_timeout}s`);
+} catch (error) {
+  console.error("[DB] ❌ Failed to initialize database connection:", error);
+  throw error;
+}
+
+// Health check function
+export async function checkDatabaseHealth(): Promise<{
+  healthy: boolean;
+  message: string;
+  latency?: number;
+}> {
   try {
-    const client = await pool.connect();
-    await client.query('SELECT 1');
-    client.release();
-    isConnected = true;
-    dbAvailable = true;
-    console.log("[DB] ✓ Database available");
-    return true;
-  } catch (err: any) {
-    isConnected = false;
-    dbAvailable = false;
+    const start = Date.now();
+    await sql`SELECT 1`;
+    const latency = Date.now() - start;
     
-    if (err.message?.includes("endpoint") && err.message?.includes("disabled")) {
-      console.error("[DB] ⚠️  Neon endpoint DISABLED - running in memory-only mode");
-      console.error("[DB] ⚠️  To fix: Enable endpoint at https://console.neon.tech");
-    } else {
-      console.error("[DB] ⚠️  Connection failed:", err.message);
-    }
-    
-    console.log("[DB] ℹ️  App will run with memory-only sessions");
-    return false;
+    return {
+      healthy: true,
+      message: "Database connection is healthy",
+      latency,
+    };
+  } catch (error) {
+    console.error("[DB] Health check failed:", error);
+    return {
+      healthy: false,
+      message: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 }
 
-// Test connection but don't wait for it
-testConnection().catch(() => {
-  console.log("[DB] Starting in memory-only mode");
+// Graceful shutdown
+export async function closeDatabaseConnection(): Promise<void> {
+  try {
+    console.log("[DB] Closing database connection pool...");
+    await sql.end({ timeout: 5 });
+    console.log("[DB] ✅ Database connection pool closed");
+  } catch (error) {
+    console.error("[DB] ❌ Error closing database connection:", error);
+  }
+}
+
+// Handle process termination
+process.on("SIGTERM", async () => {
+  console.log("[DB] SIGTERM received, closing database connection...");
+  await closeDatabaseConnection();
+  process.exit(0);
 });
 
-// Try to reconnect periodically
-setInterval(() => {
-  if (!isConnected) {
-    testConnection().catch(() => {});
-  }
-}, 60000); // Every 60 seconds
+process.on("SIGINT", async () => {
+  console.log("[DB] SIGINT received, closing database connection...");
+  await closeDatabaseConnection();
+  process.exit(0);
+});
 
-export { pool };
-export const db = drizzle({ client: pool, schema });
-
-// Check if database is available
-export function isDatabaseAvailable(): boolean {
-  return dbAvailable;
-}
-
-// Safe query wrapper - returns null if DB unavailable
-export async function executeWithRetry<T>(
-  operation: () => Promise<T>,
-  maxRetries: number = 3
-): Promise<T | null> {
-  if (!dbAvailable) {
-    console.log("[DB] Skipping query - database unavailable");
-    return null;
-  }
-  
-  let lastError: any;
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await operation();
-    } catch (err: any) {
-      lastError = err;
-      
-      if (err.message?.includes("endpoint") && err.message?.includes("disabled")) {
-        console.error("[DB] Endpoint disabled - switching to memory mode");
-        dbAvailable = false;
-        return null;
-      }
-      
-      if (attempt < maxRetries) {
-        const delay = Math.min(500 * attempt, 2000);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-  }
-  
-  console.error("[DB] Query failed after retries:", lastError.message);
-  dbAvailable = false;
-  return null;
-}
+// Export database instance
+export { db, sql };
